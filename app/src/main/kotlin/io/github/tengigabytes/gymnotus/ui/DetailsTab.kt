@@ -1,9 +1,6 @@
 package io.github.tengigabytes.gymnotus.ui
 
-import android.content.ActivityNotFoundException
-import android.content.Intent
 import android.os.Build
-import android.provider.Settings
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -13,16 +10,12 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
-import androidx.compose.foundation.text.selection.SelectionContainer
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
-import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
@@ -36,12 +29,8 @@ import io.github.tengigabytes.gymnotus.power.ReadingStatus
 import io.github.tengigabytes.gymnotus.power.parseRailName
 import io.github.tengigabytes.gymnotus.sampler.MonitorListState
 import io.github.tengigabytes.gymnotus.sampler.RailRow
-import io.github.tengigabytes.gymnotus.sampler.Sampler
 import io.github.tengigabytes.gymnotus.sampler.SamplerState
 import java.util.Locale
-
-private const val GRANT_COMMAND =
-    "adb shell pm grant io.github.tengigabytes.gymnotus android.permission.ACCESS_FINE_POWER_MONITORS"
 
 private const val DASH = "—"
 
@@ -55,9 +44,7 @@ private const val DASH = "—"
 fun DetailsTab(
     state: SamplerState,
     deviceMap: DeviceMap?,
-    onInterval: (Int) -> Unit,
     onReset: () -> Unit,
-    onSetUp: () -> Unit,
     onRetry: () -> Unit,
 ) {
     LazyColumn(Modifier.fillMaxSize()) {
@@ -79,26 +66,11 @@ fun DetailsTab(
                 Mono(mapLine(deviceMap))
             }
         }
-        item(key = "mode") {
-            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
-                SectionTitle(stringResource(R.string.section_mode))
-                ModeNotice(state.finePermission, onSetUp)
-            }
-        }
         item(key = "polling") {
             Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
                 SectionTitle(stringResource(R.string.section_polling))
-                // One log has one interval and one run of poll numbers, so these are locked while it is open.
-                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-                    for (ms in Sampler.INTERVAL_CHOICES_MS) {
-                        FilterChip(
-                            selected = state.intervalMs == ms,
-                            enabled = state.log == null,
-                            onClick = { onInterval(ms) },
-                            label = { Text(stringResource(R.string.interval_ms, ms)) },
-                        )
-                    }
-                }
+                Field(stringResource(R.string.field_interval), stringResource(R.string.interval_ms, state.intervalMs))
+                // Clears the statistics below and the buffer; locked while a log is open.
                 OutlinedButton(onClick = onReset, enabled = state.log == null) { Text(stringResource(R.string.reset)) }
                 Field(stringResource(R.string.field_polls), integer(state.polls))
                 Field(stringResource(R.string.field_errors), integer(state.pollErrors), error = state.pollErrors > 0)
@@ -148,32 +120,6 @@ private fun CrossChecks(rails: List<RailRow>, map: DeviceMap?) {
             )
         }
     }
-}
-
-/** Which of the two refresh limits applies, and how to get the faster one. */
-@Composable
-private fun ModeNotice(finePermission: Boolean, onSetUp: () -> Unit) {
-    if (finePermission) {
-        Mono(stringResource(R.string.mode_fast))
-        return
-    }
-    val context = LocalContext.current
-    Text(stringResource(R.string.mode_standard), style = MaterialTheme.typography.bodyMedium)
-    Text(stringResource(R.string.setup_steps), style = MaterialTheme.typography.bodyMedium)
-    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(onClick = onSetUp) { Text(stringResource(R.string.setup_button)) }
-        OutlinedButton(
-            onClick = {
-                try {
-                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS))
-                } catch (e: ActivityNotFoundException) {
-                    // Developer options are hidden until enabled in About phone; nothing to open yet.
-                }
-            },
-        ) { Text(stringResource(R.string.developer_options)) }
-    }
-    Mono(stringResource(R.string.setup_computer))
-    SelectionContainer { Mono(GRANT_COMMAND) }
 }
 
 private fun LazyListScope.railSection(type: MonitorType, rows: List<RailRow>) {

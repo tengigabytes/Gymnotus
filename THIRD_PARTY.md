@@ -25,6 +25,10 @@ the subsystem each is labelled with, and which PMIC they belong to. These were r
 Google's kernel release for those devices, which is licensed GPL-2.0-only. The map holds those facts in its own
 format and contains no device-tree source.
 
+## Icons
+
+The settings icon (`app/src/main/res/drawable/ic_settings.xml`) is from Google's Material Icons, Apache-2.0.
+
 ## Colour palette
 
 The chart colours are the validated categorical palette described in `app/src/main/kotlin/.../ui/TimelineChart.kt`.

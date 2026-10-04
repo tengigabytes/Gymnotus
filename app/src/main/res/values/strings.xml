@@ -8,6 +8,24 @@
     <string name="tab_log">Log</string>
     <string name="tab_details">Details</string>
 
+    <!-- Settings -->
+    <string name="settings_title">Settings</string>
+    <string name="back">Back</string>
+    <string name="slow_screen_off_hint">Each poll with the screen off wakes the phone. Turn this off to keep full time resolution when measuring a screen-off workload.</string>
+    <string name="section_display">Display</string>
+    <string name="setting_keep_screen_on">Keep the screen on while Gymnotus is showing</string>
+    <string name="setting_keep_screen_on_hint">The screen is a large load itself; turn this off to let it sleep on the system timeout.</string>
+    <string name="setting_unit">Power unit</string>
+    <string name="setting_unit_hint">Raw readings on the Details page and exported files stay in mW.</string>
+    <string name="setting_flow_nodes">Subsystems in the flow diagram</string>
+    <string name="setting_flow_nodes_hint">The largest keep a node of their own; the rest share “other”.</string>
+    <string name="section_about">About</string>
+    <string name="about_version">Version %1$s</string>
+    <string name="about_license">Gymnotus is free software under the GNU General Public License, version 3 or later. It comes with no warranty.</string>
+    <string name="about_license_button">Licence text</string>
+    <string name="about_third_party">Third-party components</string>
+    <string name="about_privacy">Privacy policy</string>
+
     <!-- Live page -->
     <string name="hero_detail_battery">Measured rails %1$s · unmeasured %2$s</string>
     <string name="hero_detail_external">On external power: no device total · battery rail %1$s</string>
@@ -23,9 +41,9 @@
     <string name="sankey_other">Other ×%1$d</string>
     <string name="view_flow">Flow</string>
     <string name="view_trend">Trend</string>
-    <string name="sankey_hint">Ribbon width is power; numbers are mW. Tap a node to see the rails behind it.</string>
-    <string name="check_ok">Check passed: sources %1$s = subsystems %2$s = rails %3$s mW</string>
-    <string name="check_bad">Check FAILED: sources %1$s, subsystems %2$s, rails %3$s mW</string>
+    <string name="sankey_hint">Ribbon width is power; numbers are %1$s. Tap a node to see the rails behind it.</string>
+    <string name="check_ok">Check passed: sources %1$s = subsystems %2$s = rails %3$s %4$s</string>
+    <string name="check_bad">Check FAILED: sources %1$s, subsystems %2$s, rails %3$s %4$s</string>
     <string name="node_detail_sum">Sum of %1$d rails</string>
     <string name="chart_add">Add to trend chart</string>
     <string name="chart_remove">Remove from trend chart</string>
@@ -49,7 +67,7 @@
     <string name="plugged_dock">Dock</string>
     <string name="dashboard_rails">Measured rails (%1$d)</string>
     <string name="dashboard_hint">Power only: voltage and current per rail are not available to apps. Line: last 60 s. Range: last 5 min.</string>
-    <string name="tile_range">%1$s – %2$s mW</string>
+    <string name="tile_range">%1$s – %2$s %3$s</string>
 
     <!-- Log page -->
     <string name="section_log">Log to a file</string>
@@ -61,6 +79,7 @@
     <string name="section_polling">Polling</string>
     <string name="section_device">Device and data sources</string>
     <string name="section_raw">Raw readings</string>
+    <string name="field_interval">Polling interval</string>
     <string name="field_polls">Polls</string>
     <string name="field_errors">Errors</string>
     <string name="field_latency">Call latency min / median / max</string>
@@ -134,7 +153,7 @@
     <string name="battery_series">Battery rail</string>
 
     <!-- Chart -->
-    <string name="chart_title">Power over time (mW)</string>
+    <string name="chart_title">Power over time (%1$s)</string>
     <string name="window_1min">1 min</string>
     <string name="window_5min">5 min</string>
     <string name="chart_empty">Tap a row below to chart it (up to %1$d).</string>

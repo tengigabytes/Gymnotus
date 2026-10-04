@@ -6,6 +6,24 @@
     <string name="tab_log">記錄</string>
     <string name="tab_details">詳細</string>
 
+    <!-- Settings -->
+    <string name="settings_title">設定</string>
+    <string name="back">返回</string>
+    <string name="slow_screen_off_hint">螢幕關閉時每次輪詢都會喚醒手機。要量測關螢幕下的工作負載、需要完整時間解析度時，請關閉這個選項。</string>
+    <string name="section_display">顯示</string>
+    <string name="setting_keep_screen_on">顯示 Gymnotus 時保持螢幕常亮</string>
+    <string name="setting_keep_screen_on_hint">螢幕本身就是很大的負載；關閉後螢幕會依系統的逾時設定休眠。</string>
+    <string name="setting_unit">功率單位</string>
+    <string name="setting_unit_hint">「詳細」頁的原始讀數與匯出檔一律使用 mW。</string>
+    <string name="setting_flow_nodes">流向圖顯示的子系統數</string>
+    <string name="setting_flow_nodes_hint">功率最大的幾個各自一格，其餘併入「其他」。</string>
+    <string name="section_about">關於</string>
+    <string name="about_version">版本 %1$s</string>
+    <string name="about_license">Gymnotus 是自由軟體，以 GNU General Public License 第 3 版或更新版本授權，不附帶任何擔保。</string>
+    <string name="about_license_button">授權全文</string>
+    <string name="about_third_party">第三方元件</string>
+    <string name="about_privacy">隱私權政策</string>
+
     <!-- Live page -->
     <string name="hero_detail_battery">實測 rail %1$s · 未量測 %2$s</string>
     <string name="hero_detail_external">外接電源中：沒有整機總功率 · 電池 rail %1$s</string>
@@ -21,9 +39,9 @@
     <string name="sankey_other">其他 %1$d 項</string>
     <string name="view_flow">流向</string>
     <string name="view_trend">趨勢</string>
-    <string name="sankey_hint">帶子寬度即功率，數字單位為 mW。點節點可查看它由哪些 rail 組成。</string>
-    <string name="check_ok">檢查通過：來源 %1$s = 子系統 %2$s = rail 合計 %3$s mW</string>
-    <string name="check_bad">檢查未通過：來源 %1$s、子系統 %2$s、rail 合計 %3$s mW</string>
+    <string name="sankey_hint">帶子寬度即功率，數字單位為 %1$s。點節點可查看它由哪些 rail 組成。</string>
+    <string name="check_ok">檢查通過：來源 %1$s = 子系統 %2$s = rail 合計 %3$s %4$s</string>
+    <string name="check_bad">檢查未通過：來源 %1$s、子系統 %2$s、rail 合計 %3$s %4$s</string>
     <string name="node_detail_sum">%1$d 條 rail 合計</string>
     <string name="chart_add">加入趨勢圖</string>
     <string name="chart_remove">從趨勢圖移除</string>
@@ -47,7 +65,7 @@
     <string name="plugged_dock">底座</string>
     <string name="dashboard_rails">實測 rail（%1$d）</string>
     <string name="dashboard_hint">只有功率：App 讀不到各 rail 的電壓與電流。線：最近 60 秒。範圍：最近 5 分鐘。</string>
-    <string name="tile_range">%1$s – %2$s mW</string>
+    <string name="tile_range">%1$s – %2$s %3$s</string>
 
     <!-- Log page -->
     <string name="section_log">記錄到檔案</string>
@@ -59,6 +77,7 @@
     <string name="section_polling">輪詢</string>
     <string name="section_device">裝置與資料來源</string>
     <string name="section_raw">原始讀數</string>
+    <string name="field_interval">輪詢間隔</string>
     <string name="field_polls">輪詢次數</string>
     <string name="field_errors">錯誤次數</string>
     <string name="field_latency">呼叫延遲 最小 / 中位 / 最大</string>
@@ -132,7 +151,7 @@
     <string name="battery_series">電池 rail</string>
 
     <!-- Chart -->
-    <string name="chart_title">功率變化（mW）</string>
+    <string name="chart_title">功率變化（%1$s）</string>
     <string name="window_1min">1 分鐘</string>
     <string name="window_5min">5 分鐘</string>
     <string name="chart_empty">點下方任一列即可加入圖表（最多 %1$d 條）。</string>

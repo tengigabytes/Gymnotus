@@ -133,6 +133,7 @@ private val WINDOWS_MS = listOf(60_000L to R.string.window_1min, 300_000L to R.s
 fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaultWindowMs: Long, plotHeight: Dp = 180.dp) {
     val colors = chartColors()
     val density = LocalDensity.current
+    val unit = LocalPowerUnit.current
     var windowMs by rememberSaveable { mutableStateOf(defaultWindowMs) }
     var cursorX by remember { mutableStateOf<Float?>(null) }
     var widthPx by remember { mutableIntStateOf(0) }
@@ -157,7 +158,7 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
             .padding(12.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text(stringResource(R.string.chart_title), color = colors.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(stringResource(R.string.chart_title, unit.symbol), color = colors.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for ((ms, label) in WINDOWS_MS) {
                     FilterChip(selected = windowMs == ms, onClick = { windowMs = ms }, label = { Text(stringResource(label)) })
@@ -193,7 +194,7 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
                     for (tick in scale.ticks) {
                         val y = yOf(tick)
                         drawLine(if (tick == 0.0) colors.axis else colors.grid, Offset(leftPx, y), Offset(leftPx + plotWidth, y), 1.dp.toPx())
-                        val label = measurer.measure(String.format(Locale.ROOT, "%,.0f", tick), tickStyle)
+                        val label = measurer.measure(unit.number(tick, fine = false), tickStyle)
                         drawText(label, topLeft = Offset(leftPx - label.size.width - 6.dp.toPx(), y - label.size.height / 2f))
                     }
                     for ((fraction, text) in xLabels) {
@@ -249,7 +250,7 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
                     Box(Modifier.size(10.dp).clip(CircleShape).background(colors.series[spec.slot]))
                     Text(spec.label, color = colors.primary, fontSize = 12.sp)
                     Text(
-                        if (value == null || value.isNaN()) "—" else String.format(Locale.ROOT, "%,.1f", value),
+                        if (value == null || value.isNaN()) "—" else unit.number(value.toDouble()),
                         color = colors.secondary,
                         fontSize = 12.sp,
                     )

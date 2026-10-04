@@ -43,7 +43,6 @@ import io.github.tengigabytes.gymnotus.power.SankeyModel
 import io.github.tengigabytes.gymnotus.power.SankeyNode
 import io.github.tengigabytes.gymnotus.power.SankeySpan
 import io.github.tengigabytes.gymnotus.power.TreeGrouping
-import java.util.Locale
 import kotlin.math.abs
 
 private val NODE_WIDTH = 8.dp
@@ -72,6 +71,7 @@ fun SankeyDiagram(
     val colors = chartColors()
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
+    val unit = LocalPowerUnit.current
     var widthPx by remember { mutableIntStateOf(0) }
     val unmeasuredLabel = stringResource(R.string.bar_unmeasured)
     val otherLabel = model.subsystems.lastOrNull()?.takeIf { it.merged > 0 }?.let { stringResource(R.string.sankey_other, it.merged) }
@@ -147,10 +147,10 @@ fun SankeyDiagram(
 
             // Nodes on top of the ribbons, then their labels in text ink.
             node(0f, layout.root, nodeWidth, colors.secondary)
-            label(measurer, SankeyNode(rootLabel, emptyList(), model.rootMw), layout.root, nodeWidth + 4.dp.toPx(), sourceX - nodeWidth - 8.dp.toPx(), labelStyle, valueStyle, twoLines = true)
+            label(measurer, SankeyNode(rootLabel, emptyList(), model.rootMw), layout.root, nodeWidth + 4.dp.toPx(), sourceX - nodeWidth - 8.dp.toPx(), labelStyle, valueStyle, twoLines = true, unit = unit)
             layout.sources.forEachIndexed { i, node ->
                 node(sourceX, node.bar, nodeWidth, slotOfSource(i)?.let { colors.series[it] } ?: colors.secondary)
-                label(measurer, model.sources[i], node.slot, sourceX + nodeWidth + 4.dp.toPx(), sourceLabelWidth, labelStyle, valueStyle, twoLines = true)
+                label(measurer, model.sources[i], node.slot, sourceX + nodeWidth + 4.dp.toPx(), sourceLabelWidth, labelStyle, valueStyle, twoLines = true, unit = unit)
             }
             layout.unmeasured?.let { node ->
                 // Outlined, not filled: it is what is left over, not something that was measured.
@@ -170,16 +170,17 @@ fun SankeyDiagram(
                     labelStyle,
                     valueStyle,
                     twoLines = true,
+                    unit = unit,
                 )
             }
             layout.subsystems.forEachIndexed { i, node ->
                 node(subsystemX, node.bar, nodeWidth, slotOfSubsystem(i)?.let { colors.series[it] } ?: colors.secondary)
                 val shown = if (model.subsystems[i].merged > 0) model.subsystems[i].copy(name = otherLabel ?: model.subsystems[i].name) else model.subsystems[i]
-                label(measurer, shown, node.slot, subsystemX + nodeWidth + 4.dp.toPx(), SUBSYSTEM_LABEL_WIDTH.toPx() - 4.dp.toPx(), labelStyle, valueStyle, twoLines = false)
+                label(measurer, shown, node.slot, subsystemX + nodeWidth + 4.dp.toPx(), SUBSYSTEM_LABEL_WIDTH.toPx() - 4.dp.toPx(), labelStyle, valueStyle, twoLines = false, unit = unit)
             }
         }
         ConsistencyLine(model, railsSumMw, colors)
-        Text(stringResource(R.string.sankey_hint), color = colors.secondary, fontSize = 12.sp)
+        Text(stringResource(R.string.sankey_hint, unit.symbol), color = colors.secondary, fontSize = 12.sp)
     }
 }
 
@@ -193,9 +194,9 @@ private fun ConsistencyLine(model: SankeyModel, railsSumMw: Double?, colors: Cha
     val subsystems = model.subsystems.sumOf { it.valueMw }
     val rails = railsSumMw ?: return
     val consistent = abs(sources - rails) < CONSISTENCY_TOLERANCE_MW && abs(subsystems - rails) < CONSISTENCY_TOLERANCE_MW
-    fun one(value: Double) = String.format(Locale.ROOT, "%,.1f", value)
+    val unit = LocalPowerUnit.current
     Text(
-        stringResource(if (consistent) R.string.check_ok else R.string.check_bad, one(sources), one(subsystems), one(rails)),
+        stringResource(if (consistent) R.string.check_ok else R.string.check_bad, unit.number(sources), unit.number(subsystems), unit.number(rails), unit.symbol),
         // The wording carries the result; the colour only draws the eye to a failure.
         color = if (consistent) colors.secondary else Color(0xFFD03B3B),
         fontSize = 12.sp,
@@ -235,13 +236,14 @@ private fun DrawScope.label(
     nameStyle: TextStyle,
     valueStyle: TextStyle,
     twoLines: Boolean,
+    unit: PowerUnit,
 ) {
-    val value = String.format(Locale.ROOT, "%,.0f", node.valueMw)
+    val value = unit.number(node.valueMw, fine = false)
     val constraints = Constraints(maxWidth = maxWidth.toInt().coerceAtLeast(1))
     val centre = (slot.top + slot.bottom) / 2
     if (twoLines) {
         val name = measurer.measure(node.name, nameStyle, overflow = TextOverflow.Ellipsis, maxLines = 1, constraints = constraints)
-        val number = measurer.measure("$value mW", valueStyle, maxLines = 1, constraints = constraints)
+        val number = measurer.measure("$value ${unit.symbol}", valueStyle, maxLines = 1, constraints = constraints)
         if (slot.height >= name.size.height + number.size.height) {
             val top = centre - (name.size.height + number.size.height) / 2f
             drawText(name, topLeft = Offset(x, top))

@@ -20,9 +20,10 @@ import io.github.tengigabytes.gymnotus.sampler.SamplerState
 
 /** Small monospaced line for diagnostics and technical values. */
 @Composable
-fun Mono(text: String, error: Boolean = false) {
+fun Mono(text: String, error: Boolean = false, modifier: Modifier = Modifier) {
     Text(
         text = text,
+        modifier = modifier,
         style = MaterialTheme.typography.bodySmall,
         fontFamily = FontFamily.Monospace,
         color = if (error) MaterialTheme.colorScheme.error else MaterialTheme.colorScheme.onSurfaceVariant,

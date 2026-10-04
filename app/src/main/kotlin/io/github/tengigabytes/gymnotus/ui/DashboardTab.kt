@@ -94,6 +94,7 @@ fun DashboardTab(state: SamplerState, history: List<HistoryPoint>, deviceMap: De
 @Composable
 private fun BatteryCard(battery: BatterySample?, batteryRail: String, batteryRailMw: Double?) {
     val dash = "—"
+    val unit = LocalPowerUnit.current
     fun number(format: String, value: Double?) = value?.let { String.format(Locale.ROOT, format, it) } ?: dash
     Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainer, modifier = Modifier.fillMaxWidth()) {
         Column(Modifier.padding(12.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -101,7 +102,8 @@ private fun BatteryCard(battery: BatterySample?, batteryRail: String, batteryRai
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Stat(stringResource(R.string.field_voltage), number("%.3f V", battery?.voltageMv?.let { it / 1000.0 }), Modifier.weight(1f))
                 Stat(stringResource(R.string.field_current), number("%+.1f mA", battery?.currentUa?.let { it / 1000.0 }), Modifier.weight(1f))
-                Stat(stringResource(R.string.field_power), number("%+.1f mW", battery?.powerMw), Modifier.weight(1f))
+                // The sign matters here (+ is charging), so it is written out even for a positive value.
+                Stat(stringResource(R.string.field_power), battery?.powerMw?.let { (if (it >= 0) "+" else "") + unit.text(it) } ?: dash, Modifier.weight(1f))
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Stat(stringResource(R.string.field_status), batteryStatus(battery?.status) ?: dash, Modifier.weight(1f))
@@ -110,7 +112,7 @@ private fun BatteryCard(battery: BatterySample?, batteryRail: String, batteryRai
             }
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 Stat(stringResource(R.string.field_charge), number("%,.0f mAh", battery?.chargeCounterUah?.let { it / 1000.0 }), Modifier.weight(1f))
-                Stat(stringResource(R.string.field_battery_rail, batteryRail), number("%.1f mW", batteryRailMw), Modifier.weight(2f))
+                Stat(stringResource(R.string.field_battery_rail, batteryRail), batteryRailMw?.let { unit.text(it) } ?: dash, Modifier.weight(2f))
             }
             Text(stringResource(R.string.battery_note), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)
         }
@@ -165,20 +167,21 @@ private fun RailTile(row: RailRow, history: List<HistoryPoint>, recent: List<His
         if (min <= max) min to max else null
     }
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val unit = LocalPowerUnit.current
     Surface(shape = RoundedCornerShape(12.dp), color = MaterialTheme.colorScheme.surfaceContainer) {
         Column(Modifier.padding(12.dp)) {
             Text(name.rail, style = MaterialTheme.typography.labelMedium, fontFamily = FontFamily.Monospace, maxLines = 1, overflow = TextOverflow.Ellipsis)
             // Always a line, even when empty, so tiles with and without a label are the same height.
             Text(label.orEmpty(), style = MaterialTheme.typography.bodySmall, color = muted, maxLines = 1, overflow = TextOverflow.Ellipsis)
             Text(
-                row.reading?.powerMw?.let { stringResource(R.string.power_mw, String.format(Locale.ROOT, "%,.1f", it)) } ?: stringResource(R.string.no_data),
+                row.reading?.powerMw?.let { unit.text(it) } ?: stringResource(R.string.no_data),
                 style = MaterialTheme.typography.titleLarge.copy(fontFeatureSettings = "tnum"),
                 fontWeight = FontWeight.Bold,
                 maxLines = 1,
             )
             Sparkline(recent, index)
             Text(
-                range?.let { (min, max) -> stringResource(R.string.tile_range, String.format(Locale.ROOT, "%,.1f", min), String.format(Locale.ROOT, "%,.1f", max)) }
+                range?.let { (min, max) -> stringResource(R.string.tile_range, unit.number(min.toDouble()), unit.number(max.toDouble()), unit.symbol) }
                     ?: stringResource(R.string.no_data),
                 style = MaterialTheme.typography.bodySmall.copy(fontFeatureSettings = "tnum"),
                 color = muted,

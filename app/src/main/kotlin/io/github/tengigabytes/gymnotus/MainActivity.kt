@@ -10,6 +10,8 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import io.github.tengigabytes.gymnotus.ui.GymnotusScreen
 import io.github.tengigabytes.gymnotus.ui.ProbeViewModel
 
@@ -19,9 +21,16 @@ class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         enableEdgeToEdge()
-        // A 60 s capture must not be cut short by the screen timeout.
-        window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
         setContent {
+            // The user's choice: on keeps the readings in view, off lets the screen, a large load itself, sleep.
+            val keepScreenOn = viewModel.settings.collectAsState().value.keepScreenOn
+            LaunchedEffect(keepScreenOn) {
+                if (keepScreenOn) {
+                    window.addFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                } else {
+                    window.clearFlags(WindowManager.LayoutParams.FLAG_KEEP_SCREEN_ON)
+                }
+            }
             val colors = if (isSystemInDarkTheme()) dynamicDarkColorScheme(this) else dynamicLightColorScheme(this)
             MaterialTheme(colorScheme = colors) {
                 GymnotusScreen(viewModel)

@@ -217,6 +217,6 @@ fun selectDefaults(selection: ChartSelection, tree: PowerTree, batteryLabel: Str
 
 @Composable
 fun formatPower(powerMw: Double?): String =
-    if (powerMw == null) stringResource(R.string.no_data) else stringResource(R.string.power_mw, String.format(Locale.ROOT, "%.1f", powerMw))
+    if (powerMw == null) stringResource(R.string.no_data) else LocalPowerUnit.current.text(powerMw)
 
 private fun formatShare(share: Double?) = share?.let { String.format(Locale.ROOT, " %5.1f%%", it * 100) } ?: ""

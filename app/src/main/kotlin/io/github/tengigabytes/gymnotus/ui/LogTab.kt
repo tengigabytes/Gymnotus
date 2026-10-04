@@ -9,7 +9,6 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.Button
-import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedButton
 import androidx.compose.material3.Text
@@ -31,7 +30,6 @@ fun LogTab(
     state: SamplerState,
     onStartLog: () -> Unit,
     onStopLog: () -> Unit,
-    onSlowWhenScreenOff: (Boolean) -> Unit,
     onExport: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -52,11 +50,6 @@ fun LogTab(
             Button(onClick = onStopLog) { Text(stringResource(R.string.stop_log)) }
             LogLine(log)
         }
-        FilterChip(
-            selected = state.slowWhenScreenOff,
-            onClick = { onSlowWhenScreenOff(!state.slowWhenScreenOff) },
-            label = { Text(stringResource(R.string.slow_screen_off, Sampler.SCREEN_OFF_INTERVAL_MS / 1000)) },
-        )
 
         SectionTitle(stringResource(R.string.section_buffer))
         Text(stringResource(R.string.buffer_hint, (Sampler.BUFFER_SPAN_MS / 1000).toInt()), style = MaterialTheme.typography.bodyMedium)

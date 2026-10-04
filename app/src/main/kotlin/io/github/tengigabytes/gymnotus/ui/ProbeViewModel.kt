@@ -23,6 +23,7 @@ import io.github.tengigabytes.gymnotus.sampler.LogService
 import io.github.tengigabytes.gymnotus.sampler.RailRow
 import io.github.tengigabytes.gymnotus.sampler.Sampler
 import io.github.tengigabytes.gymnotus.sampler.SamplerState
+import java.io.IOException
 import kotlin.coroutines.cancellation.CancellationException
 import org.json.JSONArray
 import org.json.JSONException
@@ -144,6 +145,34 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
         get() = TreeGrouping.entries.firstOrNull { it.name == uiPrefs.getString(PREF_GROUPING, null) } ?: TreeGrouping.SUBSYSTEM
         set(value) = uiPrefs.edit { putString(PREF_GROUPING, value.name) }
 
+    private val _settings = MutableStateFlow(
+        UiSettings(
+            keepScreenOn = uiPrefs.getBoolean(PREF_KEEP_SCREEN_ON, true),
+            flowSubsystems = uiPrefs.getInt(PREF_FLOW_SUBSYSTEMS, UiSettings.DEFAULT_FLOW_SUBSYSTEMS),
+            powerUnit = PowerUnit.entries.firstOrNull { it.name == uiPrefs.getString(PREF_POWER_UNIT, null) } ?: PowerUnit.MILLIWATT,
+        ),
+    )
+
+    // The settings page's own choices; the sampler keeps the polling ones.
+    val settings: StateFlow<UiSettings> = _settings.asStateFlow()
+
+    fun updateSettings(value: UiSettings) {
+        _settings.value = value
+        uiPrefs.edit {
+            putBoolean(PREF_KEEP_SCREEN_ON, value.keepScreenOn)
+            putInt(PREF_FLOW_SUBSYSTEMS, value.flowSubsystems)
+            putString(PREF_POWER_UNIT, value.powerUnit.name)
+        }
+    }
+
+    // A bundled legal text; they are small, and read only when the user opens one.
+    fun legalText(document: LegalDocument): String =
+        try {
+            getApplication<Application>().assets.open(document.asset).bufferedReader().use { it.readText() }
+        } catch (e: IOException) {
+            document.asset
+        }
+
     var sortByPower: Boolean
         get() = uiPrefs.getBoolean(PREF_SORT_BY_POWER, false)
         set(value) = uiPrefs.edit { putBoolean(PREF_SORT_BY_POWER, value) }
@@ -213,6 +242,9 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
         const val PREF_GROUPING = "grouping"
         const val PREF_VISUAL = "visual"
         const val PREF_SORT_BY_POWER = "sort_by_power"
+        const val PREF_KEEP_SCREEN_ON = "keep_screen_on"
+        const val PREF_FLOW_SUBSYSTEMS = "flow_subsystems"
+        const val PREF_POWER_UNIT = "power_unit"
         const val PREF_SELECTION = "chart_selection"
     }
 }

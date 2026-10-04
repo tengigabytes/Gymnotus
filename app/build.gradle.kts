@@ -68,6 +68,33 @@ android {
     }
 }
 
+// The licence, the third-party list and the privacy policy are shown inside the app (Settings > About), from
+// the same files that sit at the top of the repository.
+abstract class LegalAssetsTask : DefaultTask() {
+    @get:InputFiles
+    @get:PathSensitive(PathSensitivity.NAME_ONLY)
+    abstract val documents: ConfigurableFileCollection
+
+    @get:OutputDirectory
+    abstract val outputDir: DirectoryProperty
+
+    @TaskAction
+    fun copy() {
+        val target = outputDir.get().asFile.resolve("legal").apply { mkdirs() }
+        documents.forEach { it.copyTo(target.resolve(it.name), overwrite = true) }
+    }
+}
+
+val legalAssets = tasks.register<LegalAssetsTask>("legalAssets") {
+    documents.from(rootProject.file("LICENSE"), rootProject.file("THIRD_PARTY.md"), rootProject.file("PRIVACY.md"))
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.sources.assets?.addGeneratedSourceDirectory(legalAssets, LegalAssetsTask::outputDir)
+    }
+}
+
 dependencies {
     implementation(libs.androidx.core.ktx)
     implementation(libs.kotlinx.coroutines.android)

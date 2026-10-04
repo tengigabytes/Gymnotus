@@ -50,9 +50,6 @@ enum class Visual(@StringRes val label: Int) {
 
 private val VISUAL_HEIGHT = 300.dp
 
-// Eight labelled rows is what fits beside a 300 dp diagram without the labels crowding the bars.
-private const val MAX_FLOW_SUBSYSTEMS = 8
-
 /** Mean power per monitor index over the kept history; NaN where a monitor never had a value. */
 private fun averagePower(history: List<HistoryPoint>): FloatArray {
     val size = history.firstOrNull()?.powerMw?.size ?: return FloatArray(0)
@@ -80,6 +77,7 @@ fun LiveTab(
     history: List<HistoryPoint>,
     selection: ChartSelection,
     deviceMap: DeviceMap?,
+    flowSubsystems: Int,
     grouping: TreeGrouping,
     onGrouping: (TreeGrouping) -> Unit,
     visual: Visual,
@@ -103,7 +101,7 @@ fun LiveTab(
         state.rails.filter { it.info.type == MonitorType.MEASUREMENT }.map { TreeInput(it.info.index, it.info.name, it.reading?.powerMw) },
         state.battery?.onExternalPower,
         deviceMap,
-        maxSubsystems = MAX_FLOW_SUBSYSTEMS,
+        maxSubsystems = flowSubsystems,
         rankMw = { average.getOrNull(it.index)?.takeIf { mean -> !mean.isNaN() }?.toDouble() ?: it.powerMw ?: 0.0 },
     )
     // Looked up afresh on every refresh, so the panel shows live values; a node that no longer exists closes it.
@@ -195,8 +193,7 @@ private fun Headline(tree: PowerTree, state: SamplerState, selection: ChartSelec
                 color = muted,
             )
             Text(
-                tree.baseMw?.let { stringResource(R.string.power_mw, String.format(Locale.ROOT, "%,.0f", it)) }
-                    ?: stringResource(R.string.no_data),
+                tree.baseMw?.let { LocalPowerUnit.current.text(it, fine = false) } ?: stringResource(R.string.no_data),
                 style = MaterialTheme.typography.displaySmall,
                 fontWeight = FontWeight.Bold,
             )
