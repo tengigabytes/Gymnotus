@@ -9,6 +9,12 @@ data class RailSource(val id: String, val name: String, val pattern: Regex)
 data class UnmonitoredRail(val rail: String, val subsystem: String, val kind: String)
 
 /**
+ * A consumer the system models itself and the rails it should add up to: a check, built into the device, that
+ * rails are read and summed correctly.
+ */
+data class CrossCheck(val consumer: String, val rails: List<String>)
+
+/**
  * Per-device facts that the PowerMonitor API does not give, taken from the device's published device tree.
  * Files live in `data/device-maps/` so they can be contributed without touching code.
  *
@@ -24,6 +30,7 @@ data class DeviceMap(
     val batteryRail: String?,
     val sources: List<RailSource>,
     val unmonitored: List<UnmonitoredRail>,
+    val crossChecks: List<CrossCheck> = emptyList(),
 ) {
     fun sourceOf(rail: String): RailSource? = sources.firstOrNull { it.pattern.matches(rail) }
 
@@ -33,6 +40,7 @@ data class DeviceMap(
             val root = JSONObject(json)
             val sources = root.getJSONArray("sources")
             val unmonitored = root.optJSONArray("unmonitored")
+            val crossChecks = root.optJSONArray("crossChecks")
             return DeviceMap(
                 devices = root.getJSONArray("devices").let { array -> List(array.length()) { array.getString(it) } },
                 description = root.optString("description"),
@@ -44,6 +52,11 @@ data class DeviceMap(
                 unmonitored = List(unmonitored?.length() ?: 0) { i ->
                     val rail = unmonitored!!.getJSONObject(i)
                     UnmonitoredRail(rail.getString("rail"), rail.getString("subsystem"), rail.getString("kind"))
+                },
+                crossChecks = List(crossChecks?.length() ?: 0) { i ->
+                    val check = crossChecks!!.getJSONObject(i)
+                    val rails = check.getJSONArray("rails")
+                    CrossCheck(check.getString("consumer"), List(rails.length()) { rails.getString(it) })
                 },
             )
         }

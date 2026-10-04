@@ -26,11 +26,14 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.unit.dp
 import io.github.tengigabytes.gymnotus.R
 import io.github.tengigabytes.gymnotus.power.DeviceMap
+import io.github.tengigabytes.gymnotus.power.IntervalSummary
 import io.github.tengigabytes.gymnotus.power.MonitorType
 import io.github.tengigabytes.gymnotus.power.ReadingStatus
+import io.github.tengigabytes.gymnotus.power.parseRailName
 import io.github.tengigabytes.gymnotus.sampler.MonitorListState
 import io.github.tengigabytes.gymnotus.sampler.RailRow
 import io.github.tengigabytes.gymnotus.sampler.Sampler
@@ -40,7 +43,14 @@ import java.util.Locale
 private const val GRANT_COMMAND =
     "adb shell pm grant io.github.tengigabytes.gymnotus android.permission.ACCESS_FINE_POWER_MONITORS"
 
-/** Everything needed to judge or tune the measurement itself: mode, polling, sources, and the raw readings. */
+private const val DASH = "—"
+
+/**
+ * Everything needed to judge or tune the measurement itself: sources, mode, polling, cross-checks, raw readings.
+ *
+ * Every changing value sits alone on a line, right-aligned in tabular digits ([Field]). Lines never wrap and
+ * never change length, so a refresh changes digits in place and nothing shifts.
+ */
 @Composable
 fun DetailsTab(
     state: SamplerState,
@@ -67,7 +77,6 @@ fun DetailsTab(
                 val consumer = state.rails.count { it.info.type == MonitorType.CONSUMER }
                 Mono(stringResource(R.string.summary_monitors, state.rails.size, measurement, consumer))
                 Mono(mapLine(deviceMap))
-                Mono(batteryLine(state.battery))
             }
         }
         item(key = "mode") {
@@ -91,9 +100,18 @@ fun DetailsTab(
                     }
                 }
                 OutlinedButton(onClick = onReset, enabled = state.log == null) { Text(stringResource(R.string.reset)) }
-                Mono(stringResource(R.string.summary_polls, state.polls, state.pollErrors, minMedMax(state.callLatency)))
+                Field(stringResource(R.string.field_polls), integer(state.polls))
+                Field(stringResource(R.string.field_errors), integer(state.pollErrors), error = state.pollErrors > 0)
+                Field(stringResource(R.string.field_latency), minMedMax(state.callLatency))
+                // The system's own error text, shown as it came.
                 state.lastPollError?.let { Mono(stringResource(R.string.last_error, it), error = true) }
                 Mono(stringResource(R.string.overhead_notice))
+            }
+        }
+        item(key = "crosscheck") {
+            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                SectionTitle(stringResource(R.string.section_crosscheck))
+                CrossChecks(state.rails, deviceMap)
             }
         }
         item(key = "raw-title") {
@@ -102,6 +120,32 @@ fun DetailsTab(
         // UNKNOWN first: a type this build does not know about is itself a finding.
         for (type in listOf(MonitorType.UNKNOWN, MonitorType.MEASUREMENT, MonitorType.CONSUMER)) {
             railSection(type, state.rails.filter { it.info.type == type })
+        }
+    }
+}
+
+@Composable
+private fun CrossChecks(rails: List<RailRow>, map: DeviceMap?) {
+    val checks = map?.crossChecks.orEmpty()
+    if (checks.isEmpty()) {
+        Mono(stringResource(R.string.crosscheck_none))
+        return
+    }
+    Text(stringResource(R.string.crosscheck_hint), style = MaterialTheme.typography.bodyMedium)
+    for (check in checks) {
+        val consumer = rails.firstOrNull { it.info.type == MonitorType.CONSUMER && it.info.name == check.consumer }?.reading?.powerMw
+        val parts = check.rails.map { name -> rails.firstOrNull { parseRailName(it.info.name).rail == name }?.reading?.powerMw }
+        // A sum only when every rail has data: a partial sum would look like a mismatch.
+        val sum = if (parts.all { it != null }) parts.sumOf { it!! } else null
+        Column(Modifier.padding(top = 6.dp)) {
+            Text(check.consumer, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold, style = MaterialTheme.typography.bodyMedium)
+            Mono(check.rails.joinToString(" + "))
+            Field(stringResource(R.string.crosscheck_system), milliwatts(consumer))
+            Field(stringResource(R.string.crosscheck_sum), milliwatts(sum))
+            Field(
+                stringResource(R.string.crosscheck_diff),
+                if (consumer != null && sum != null) String.format(Locale.ROOT, "%+.1f mW", consumer - sum) else DASH,
+            )
         }
     }
 }
@@ -150,38 +194,45 @@ private fun RailItem(row: RailRow) {
     val reading = row.reading
     val stats = row.stats
     Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
-        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(row.info.name, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Text(
+                row.info.name,
+                fontFamily = FontFamily.Monospace,
+                fontWeight = FontWeight.Bold,
+                maxLines = 1,
+                overflow = TextOverflow.Ellipsis,
+                modifier = Modifier.weight(1f),
+            )
             Text(
                 text = when {
-                    reading == null -> "—"
+                    reading == null -> DASH
                     reading.status == ReadingStatus.UNAVAILABLE -> stringResource(R.string.no_data)
                     // FIRST or RESET: no power yet; the status name is the CSV's own vocabulary.
                     reading.powerMw == null -> reading.status.name
-                    reading.status == ReadingStatus.STALE -> stringResource(R.string.raw_stale, twoDecimals(reading.powerMw))
-                    else -> stringResource(R.string.power_mw, twoDecimals(reading.powerMw))
+                    else -> stringResource(R.string.power_mw, String.format(Locale.ROOT, "%,.2f", reading.powerMw))
                 },
+                style = MaterialTheme.typography.bodyLarge.copy(fontFeatureSettings = "tnum"),
                 fontFamily = FontFamily.Monospace,
-                color = if (reading?.status == ReadingStatus.OK) {
-                    MaterialTheme.colorScheme.onSurface
-                } else {
-                    MaterialTheme.colorScheme.onSurfaceVariant
-                },
+                maxLines = 1,
             )
         }
-        if (reading != null) {
-            val energy = reading.energyUws?.let { stringResource(R.string.raw_energy_uj, String.format(Locale.ROOT, "%,d", it)) }
-                ?: stringResource(R.string.raw_energy_unavailable)
-            Mono(stringResource(R.string.raw_reading, energy, String.format(Locale.ROOT, "%,d", reading.timestampMs), row.ageMs ?: 0L))
-        }
-        Mono(stringResource(R.string.raw_intervals, stats.updateIntervals.count, minMedMax(stats.updateIntervals)))
-        Mono(stringResource(R.string.raw_counts, stats.repeats, stats.polls, percent(stats.repeats, stats.polls), stats.unavailable, stats.resets))
-        if (stats.staleEnergyChanges > 0) Mono(stringResource(R.string.raw_stale_energy, stats.staleEnergyChanges), error = true)
+        // The same lines for every rail and every state, so a refresh changes digits only.
+        // The status has a line of its own (OK, STALE, …): as a suffix on the power it would shift the number.
+        Field(stringResource(R.string.field_reading_status), reading?.status?.name ?: DASH)
+        Field(stringResource(R.string.field_energy), reading?.energyUws?.let { String.format(Locale.ROOT, "%,d µJ", it) } ?: DASH)
+        Field(stringResource(R.string.field_timestamp), reading?.let { String.format(Locale.ROOT, "%,d ms", it.timestampMs) } ?: DASH)
+        Field(stringResource(R.string.field_age), row.ageMs?.let { String.format(Locale.ROOT, "%,d ms", it) } ?: DASH)
+        Field(stringResource(R.string.field_intervals, stats.updateIntervals.count), minMedMax(stats.updateIntervals))
+        Field(stringResource(R.string.field_repeats), "${integer(stats.repeats)} / ${integer(stats.polls)}")
+        Field(stringResource(R.string.field_unavailable_resets), "${integer(stats.unavailable)} / ${integer(stats.resets)}")
+        if (stats.staleEnergyChanges > 0) Field(stringResource(R.string.raw_stale_energy), integer(stats.staleEnergyChanges), error = true)
     }
     HorizontalDivider()
 }
 
-private fun twoDecimals(value: Double) = String.format(Locale.ROOT, "%.2f", value)
+private fun minMedMax(summary: IntervalSummary) =
+    if (summary.count == 0L) DASH else "${summary.minMs} / ${summary.medianMs} / ${summary.maxMs} ms"
 
-private fun percent(part: Long, total: Long) =
-    if (total == 0L) "—" else String.format(Locale.ROOT, "%.1f%%", 100.0 * part / total)
+private fun integer(value: Long) = String.format(Locale.ROOT, "%,d", value)
+
+private fun milliwatts(value: Double?) = value?.let { String.format(Locale.ROOT, "%,.1f mW", it) } ?: DASH

@@ -9,6 +9,15 @@
     { "id": "sub", "name": "Sub PMIC (DA9189)", "railPattern": "^([SL][0-9]+S(_.*)?|BB_.*)$" },
     { "id": "ext", "name": "System rail (shunts)", "railPattern": "^VSYS_PWR_.*$" }
   ],
+  "crossChecks": [
+    { "consumer": "CPU/0", "rails": ["S4M_VDD_CPU", "S11M_VDD_CPU_M"] },
+    { "consumer": "CPU/1", "rails": ["S3M_VDD_CPU1", "S12M_VDD_CPU1_M"] },
+    { "consumer": "CPU/2", "rails": ["S2M_VDD_CPU2"] },
+    { "consumer": "GPU/0", "rails": ["S2S_VDD_GPU"] },
+    { "consumer": "DISPLAY", "rails": ["VSYS_PWR_DISP_G1", "VSYS_PWR_DISP_G2"] },
+    { "consumer": "CAMERA", "rails": ["VSYS_PWR_CAM_G1", "VSYS_PWR_CAM_G2"] },
+    { "consumer": "MOBILE_RADIO", "rails": ["VSYS_PWR_RFFE", "VSYS_PWR_MODEM"] }
+  ],
   "unmonitored": [
     { "rail": "S13M_VDD_CPU2_M", "subsystem": "CPU(BIG)", "kind": "buck" },
     { "rail": "L1M_ALIVE", "subsystem": "ALIVE", "kind": "ldo" },

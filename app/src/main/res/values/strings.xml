@@ -4,6 +4,7 @@
 
     <!-- Pages -->
     <string name="tab_live">Live</string>
+    <string name="tab_dashboard">Dashboard</string>
     <string name="tab_log">Log</string>
     <string name="tab_details">Details</string>
 
@@ -18,10 +19,36 @@
     <string name="setup_card_body">A one-time setup on this phone makes that about 0.5 s.</string>
     <string name="setup_card_action">Show me how</string>
     <string name="live_hint">Tap a row to add it to the trend chart</string>
-    <string name="sankey_other">Other (%1$d)</string>
+    <string name="sankey_other">Other ×%1$d</string>
     <string name="view_flow">Flow</string>
     <string name="view_trend">Trend</string>
-    <string name="sankey_hint">Ribbon width is power; numbers are mW. Tap a source or a subsystem to chart it.</string>
+    <string name="sankey_hint">Ribbon width is power; numbers are mW. Tap a node to see the rails behind it.</string>
+    <string name="check_ok">Check passed: sources %1$s = subsystems %2$s = rails %3$s mW</string>
+    <string name="check_bad">Check FAILED: sources %1$s, subsystems %2$s, rails %3$s mW</string>
+    <string name="node_detail_sum">Sum of %1$d rails</string>
+    <string name="chart_add">Add to trend chart</string>
+    <string name="chart_remove">Remove from trend chart</string>
+    <string name="close">Close</string>
+
+    <!-- Dashboard page -->
+    <string name="battery_title">Battery (BatteryManager)</string>
+    <string name="field_voltage">Voltage</string>
+    <string name="field_current">Current (+ charging)</string>
+    <string name="field_power">Power (I × V)</string>
+    <string name="field_status">Status</string>
+    <string name="field_source">Power source</string>
+    <string name="field_temperature">Temperature</string>
+    <string name="field_charge">Charge left</string>
+    <string name="field_battery_rail">Battery rail %1$s (discharge only)</string>
+    <string name="battery_note">Current and power here are instantaneous samples; the battery rail is an average between refreshes, so the two differ from moment to moment.</string>
+    <string name="plugged_battery">Battery</string>
+    <string name="plugged_ac">AC</string>
+    <string name="plugged_usb">USB</string>
+    <string name="plugged_wireless">Wireless</string>
+    <string name="plugged_dock">Dock</string>
+    <string name="dashboard_rails">Measured rails (%1$d)</string>
+    <string name="dashboard_hint">Power only: voltage and current per rail are not available to apps. Line: last 60 s. Range: last 5 min.</string>
+    <string name="tile_range">%1$s – %2$s mW</string>
 
     <!-- Log page -->
     <string name="section_log">Log to a file</string>
@@ -33,13 +60,28 @@
     <string name="section_polling">Polling</string>
     <string name="section_device">Device and data sources</string>
     <string name="section_raw">Raw readings</string>
+    <string name="field_polls">Polls</string>
+    <string name="field_errors">Errors</string>
+    <string name="field_latency">Call latency min / median / max</string>
+    <string name="field_energy">Accumulated energy</string>
+    <string name="field_timestamp">Timestamp</string>
+    <string name="field_age">Age of reading</string>
+    <string name="field_reading_status">Reading status</string>
+    <string name="field_intervals">Update interval min / median / max (n=%1$d)</string>
+    <string name="field_repeats">Repeated readings / polls</string>
+    <string name="field_unavailable_resets">Unavailable / resets</string>
+    <string name="crosscheck_system">System estimate</string>
+    <string name="crosscheck_sum">Sum of the rails</string>
+    <string name="crosscheck_diff">Difference</string>
+    <string name="section_crosscheck">Cross-check against the system’s own estimates</string>
+    <string name="crosscheck_hint">The system models these consumers itself. Each should equal the sum of the rails listed; a gap means the mapping or a reading is off.</string>
+    <string name="crosscheck_none">No cross-checks are defined for this device.</string>
 
     <!-- Summary -->
     <string name="list_waiting">Reading the list of power monitors…</string>
     <string name="list_empty">This device reports no power monitors (getSupportedPowerMonitors returned an empty list).</string>
     <string name="retry">Retry</string>
     <string name="summary_monitors">%1$d monitors: %2$d measured rails, %3$d modelled consumers</string>
-    <string name="summary_polls">%1$d polls · %2$d errors · call latency %3$s</string>
     <string name="last_error">Last error: %1$s</string>
     <string name="mode_fast">Fast mode: readings refresh about every 0.5 s.</string>
     <string name="mode_standard">Standard mode: the system refreshes readings every 20 s. A one-time setup makes that about 0.5 s:</string>
@@ -65,25 +107,15 @@
     <!-- Shared values -->
     <string name="no_data">no data</string>
     <string name="power_mw">%1$s mW</string>
-    <string name="min_med_max">min/med/max %1$d/%2$d/%3$d ms</string>
-    <string name="min_med_max_none">min/med/max —</string>
 
     <!-- Raw view -->
     <string name="raw_section">%1$s (%2$d)</string>
-    <string name="raw_stale">%1$s mW (not updated)</string>
-    <string name="raw_reading">Energy %1$s · timestamp %2$s ms · age %3$d ms</string>
-    <string name="raw_energy_uj">%1$s µJ</string>
-    <string name="raw_energy_unavailable">unavailable</string>
-    <string name="raw_intervals">Update interval: n=%1$d, %2$s</string>
-    <string name="raw_counts">Repeats %1$d/%2$d (%3$s) · unavailable %4$d · resets %5$d</string>
-    <string name="raw_stale_energy">Energy changed at an unchanged timestamp: %1$d</string>
+    <string name="raw_stale_energy">Energy changed at an unchanged timestamp</string>
 
     <!-- Tree -->
     <string name="tree_root_battery">Battery output</string>
     <string name="tree_root_sum">Σ measured rails</string>
     <string name="tree_chart_battery">Chart the battery rail</string>
-    <string name="battery_line">BatteryManager (instant, sign as reported): %1$s × %2$s = %3$s · %4$s · plugged=%5$s</string>
-    <string name="battery_none">BatteryManager: no sample yet</string>
     <string name="status_charging">charging</string>
     <string name="status_discharging">discharging</string>
     <string name="status_not_charging">not charging</string>

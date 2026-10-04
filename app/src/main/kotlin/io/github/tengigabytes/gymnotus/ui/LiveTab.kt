@@ -9,6 +9,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.FilterChip
 import androidx.compose.material3.MaterialTheme
@@ -16,6 +17,7 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -24,6 +26,7 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.tengigabytes.gymnotus.R
@@ -31,10 +34,12 @@ import io.github.tengigabytes.gymnotus.power.DeviceMap
 import io.github.tengigabytes.gymnotus.power.MonitorType
 import io.github.tengigabytes.gymnotus.power.PowerTree
 import io.github.tengigabytes.gymnotus.power.SankeyBuilder
+import io.github.tengigabytes.gymnotus.power.SankeyNode
 import io.github.tengigabytes.gymnotus.power.TreeGrouping
 import io.github.tengigabytes.gymnotus.power.TreeInput
 import io.github.tengigabytes.gymnotus.sampler.HistoryPoint
 import io.github.tengigabytes.gymnotus.sampler.MonitorListState
+import io.github.tengigabytes.gymnotus.sampler.RailRow
 import io.github.tengigabytes.gymnotus.sampler.SamplerState
 import java.util.Locale
 
@@ -86,7 +91,27 @@ fun LiveTab(
         return
     }
     var visual by rememberSaveable { mutableStateOf(Visual.FLOW) }
+    // The node whose make-up is shown: which column it is in, and its name.
+    var inspected by remember { mutableStateOf<Pair<TreeGrouping, String>?>(null) }
     val tree = buildTree(state.rails, grouping, state.battery, deviceMap)
+    // Which subsystems get their own node is decided on their recent average, not the latest reading,
+    // so they do not hop in and out of "other" from one refresh to the next.
+    val average = remember(history) { averagePower(history) }
+    val model = SankeyBuilder.build(
+        state.rails.filter { it.info.type == MonitorType.MEASUREMENT }.map { TreeInput(it.info.index, it.info.name, it.reading?.powerMw) },
+        state.battery?.onExternalPower,
+        deviceMap,
+        maxSubsystems = MAX_FLOW_SUBSYSTEMS,
+        rankMw = { average.getOrNull(it.index)?.takeIf { mean -> !mean.isNaN() }?.toDouble() ?: it.powerMw ?: 0.0 },
+    )
+    // Looked up afresh on every refresh, so the panel shows live values; a node that no longer exists closes it.
+    val inspectedNode = inspected?.let { (column, name) ->
+        (if (column == TreeGrouping.SOURCE) model?.sources else model?.subsystems)?.firstOrNull { it.name == name }
+    }
+    // The card is inserted above the first row, and a keyed list keeps showing the row it was showing, so
+    // without this the card would appear off-screen.
+    val listState = rememberLazyListState()
+    LaunchedEffect(inspected) { if (inspected != null) listState.animateScrollToItem(0) }
     Column(Modifier.fillMaxSize()) {
         Headline(tree, state, selection)
         Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
@@ -95,27 +120,62 @@ fun LiveTab(
             }
         }
         when (visual) {
-            Visual.FLOW -> {
-                // Which subsystems get their own node is decided on their recent average, not the latest reading,
-                // so they do not hop in and out of "other" from one refresh to the next.
-                val average = remember(history) { averagePower(history) }
-                val model = SankeyBuilder.build(
-                    state.rails.filter { it.info.type == MonitorType.MEASUREMENT }.map { TreeInput(it.info.index, it.info.name, it.reading?.powerMw) },
-                    state.battery?.onExternalPower,
-                    deviceMap,
-                    maxSubsystems = MAX_FLOW_SUBSYSTEMS,
-                    rankMw = { average.getOrNull(it.index)?.takeIf { mean -> !mean.isNaN() }?.toDouble() ?: it.powerMw ?: 0.0 },
-                )
-                if (model != null) SankeyDiagram(model, selection, VISUAL_HEIGHT)
+            Visual.FLOW -> if (model != null) {
+                SankeyDiagram(model, selection, VISUAL_HEIGHT, tree.railsSumMw) { column, name ->
+                    inspected = if (inspected == column to name) null else column to name
+                }
             }
             // The chart's own header, caption and legend take about 130 dp of the same space.
             // In standard mode a minute holds only three readings.
             Visual.TREND -> TimelineChart(history, selection, defaultWindowMs = if (state.finePermission) 60_000L else 300_000L, plotHeight = 170.dp)
         }
-        LazyColumn(Modifier.weight(1f)) {
+        LazyColumn(Modifier.weight(1f), state = listState) {
+            if (inspectedNode != null) {
+                item(key = "node-detail") {
+                    NodeDetail(inspected!!.first, inspectedNode, state.rails, selection, onClose = { inspected = null })
+                }
+            }
             if (!state.finePermission) item(key = "setup-card") { SetupCard(onShowSetup) }
             item(key = "grouping") { GroupingChips(grouping, onGrouping) }
             treeRows(tree, state.rails, grouping, selection)
+        }
+    }
+}
+
+/**
+ * What a node of the flow diagram is made of: every rail in it with its own reading, and their sum, so that the
+ * figure on the diagram can be checked by hand. Charting the node is done from here.
+ */
+@Composable
+private fun NodeDetail(column: TreeGrouping, node: SankeyNode, rails: List<RailRow>, selection: ChartSelection, onClose: () -> Unit) {
+    val label = if (node.merged > 0) stringResource(R.string.sankey_other, node.merged) else node.name
+    val key = groupKey(column, node.name)
+    // In monitor order, not by power: rows that swap places with every refresh cannot be read.
+    val members = node.indices.sorted().mapNotNull { index -> rails.firstOrNull { it.info.index == index } }
+    Surface(
+        shape = RoundedCornerShape(12.dp),
+        color = MaterialTheme.colorScheme.surfaceContainerHigh,
+        modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp).fillMaxWidth(),
+    ) {
+        Column(Modifier.padding(start = 16.dp, end = 8.dp, top = 12.dp, bottom = 4.dp)) {
+            Text(label, style = MaterialTheme.typography.titleSmall)
+            for (rail in members) {
+                // The monitor's full name: rail and the subsystem label the device gives it.
+                Row(Modifier.fillMaxWidth().padding(end = 8.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                    Mono(rail.info.name)
+                    Mono(formatPower(rail.reading?.powerMw))
+                }
+            }
+            Row(Modifier.fillMaxWidth().padding(end = 8.dp, top = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
+                Text(stringResource(R.string.node_detail_sum, members.size), style = MaterialTheme.typography.labelLarge)
+                Text(formatPower(node.valueMw), style = MaterialTheme.typography.labelLarge, fontFamily = FontFamily.Monospace)
+            }
+            Row(Modifier.align(Alignment.End)) {
+                TextButton(onClick = { selection.toggle(key, label, node.indices) }) {
+                    Text(stringResource(if (selection.slotOf(key) != null) R.string.chart_remove else R.string.chart_add))
+                }
+                TextButton(onClick = onClose) { Text(stringResource(R.string.close)) }
+            }
         }
     }
 }

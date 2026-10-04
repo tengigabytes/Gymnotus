@@ -2,6 +2,7 @@
 <resources>
     <!-- Pages -->
     <string name="tab_live">即時</string>
+    <string name="tab_dashboard">儀表板</string>
     <string name="tab_log">記錄</string>
     <string name="tab_details">詳細</string>
 
@@ -16,10 +17,36 @@
     <string name="setup_card_body">在手機上完成一次設定，就能縮短到約 0.5 秒。</string>
     <string name="setup_card_action">查看設定方式</string>
     <string name="live_hint">點任一列可加入趨勢圖</string>
-    <string name="sankey_other">其他（%1$d 項）</string>
+    <string name="sankey_other">其他 %1$d 項</string>
     <string name="view_flow">流向</string>
     <string name="view_trend">趨勢</string>
-    <string name="sankey_hint">帶子寬度即功率，數字單位為 mW。點來源或子系統可加入趨勢圖。</string>
+    <string name="sankey_hint">帶子寬度即功率，數字單位為 mW。點節點可查看它由哪些 rail 組成。</string>
+    <string name="check_ok">檢查通過：來源 %1$s = 子系統 %2$s = rail 合計 %3$s mW</string>
+    <string name="check_bad">檢查未通過：來源 %1$s、子系統 %2$s、rail 合計 %3$s mW</string>
+    <string name="node_detail_sum">%1$d 條 rail 合計</string>
+    <string name="chart_add">加入趨勢圖</string>
+    <string name="chart_remove">從趨勢圖移除</string>
+    <string name="close">關閉</string>
+
+    <!-- Dashboard page -->
+    <string name="battery_title">電池（BatteryManager）</string>
+    <string name="field_voltage">電壓</string>
+    <string name="field_current">電流（正值為充電）</string>
+    <string name="field_power">功率（電流 × 電壓）</string>
+    <string name="field_status">狀態</string>
+    <string name="field_source">電源</string>
+    <string name="field_temperature">溫度</string>
+    <string name="field_charge">剩餘電量</string>
+    <string name="field_battery_rail">電池 rail %1$s（只計放電）</string>
+    <string name="battery_note">這裡的電流與功率是瞬時取樣；電池 rail 是兩次更新之間的平均，所以兩者每一刻都會有差異。</string>
+    <string name="plugged_battery">電池</string>
+    <string name="plugged_ac">AC</string>
+    <string name="plugged_usb">USB</string>
+    <string name="plugged_wireless">無線</string>
+    <string name="plugged_dock">底座</string>
+    <string name="dashboard_rails">實測 rail（%1$d）</string>
+    <string name="dashboard_hint">只有功率：App 讀不到各 rail 的電壓與電流。線：最近 60 秒。範圍：最近 5 分鐘。</string>
+    <string name="tile_range">%1$s – %2$s mW</string>
 
     <!-- Log page -->
     <string name="section_log">記錄到檔案</string>
@@ -31,13 +58,28 @@
     <string name="section_polling">輪詢</string>
     <string name="section_device">裝置與資料來源</string>
     <string name="section_raw">原始讀數</string>
+    <string name="field_polls">輪詢次數</string>
+    <string name="field_errors">錯誤次數</string>
+    <string name="field_latency">呼叫延遲 最小 / 中位 / 最大</string>
+    <string name="field_energy">累計能量</string>
+    <string name="field_timestamp">時間戳記</string>
+    <string name="field_age">資料年齡</string>
+    <string name="field_reading_status">讀數狀態</string>
+    <string name="field_intervals">更新間隔 最小 / 中位 / 最大（n=%1$d）</string>
+    <string name="field_repeats">重複讀數 / 輪詢次數</string>
+    <string name="field_unavailable_resets">無資料 / 重置</string>
+    <string name="crosscheck_system">系統推估</string>
+    <string name="crosscheck_sum">rail 加總</string>
+    <string name="crosscheck_diff">相差</string>
+    <string name="section_crosscheck">與系統推估值交叉檢查</string>
+    <string name="crosscheck_hint">這些是系統自己推估的子系統功率，應等於所列 rail 的加總；有落差代表對應關係或讀數有問題。</string>
+    <string name="crosscheck_none">這台裝置沒有定義交叉檢查項目。</string>
 
     <!-- Summary -->
     <string name="list_waiting">正在讀取電源監測清單…</string>
     <string name="list_empty">這台裝置沒有回報任何電源監測項目（getSupportedPowerMonitors 回傳空清單）。</string>
     <string name="retry">重試</string>
     <string name="summary_monitors">%1$d 個監測項目：%2$d 條實測 rail、%3$d 個推估子系統</string>
-    <string name="summary_polls">輪詢 %1$d 次 · 錯誤 %2$d 次 · 呼叫延遲 %3$s</string>
     <string name="last_error">最近一次錯誤：%1$s</string>
     <string name="mode_fast">快速模式：讀數約每 0.5 秒更新一次。</string>
     <string name="mode_standard">標準模式：系統每 20 秒才更新一次讀數。完成一次性設定後可縮短到約 0.5 秒：</string>
@@ -63,25 +105,15 @@
     <!-- Shared values -->
     <string name="no_data">無資料</string>
     <string name="power_mw">%1$s mW</string>
-    <string name="min_med_max">最小/中位/最大 %1$d/%2$d/%3$d ms</string>
-    <string name="min_med_max_none">最小/中位/最大 —</string>
 
     <!-- Raw view -->
     <string name="raw_section">%1$s（%2$d）</string>
-    <string name="raw_stale">%1$s mW（未更新）</string>
-    <string name="raw_reading">能量 %1$s · 時間戳記 %2$s ms · 資料年齡 %3$d ms</string>
-    <string name="raw_energy_uj">%1$s µJ</string>
-    <string name="raw_energy_unavailable">不可用</string>
-    <string name="raw_intervals">更新間隔：n=%1$d，%2$s</string>
-    <string name="raw_counts">重複 %1$d/%2$d（%3$s）· 無資料 %4$d · 重置 %5$d</string>
-    <string name="raw_stale_energy">時間戳記未變但能量改變：%1$d</string>
+    <string name="raw_stale_energy">時間戳記未變但能量改變</string>
 
     <!-- Tree -->
     <string name="tree_root_battery">電池輸出</string>
     <string name="tree_root_sum">實測 rail 合計</string>
     <string name="tree_chart_battery">把電池 rail 加入圖表</string>
-    <string name="battery_line">BatteryManager（瞬時值，正負號依裝置回報）：%1$s × %2$s = %3$s · %4$s · plugged=%5$s</string>
-    <string name="battery_none">BatteryManager：尚無取樣</string>
     <string name="status_charging">充電中</string>
     <string name="status_discharging">放電中</string>
     <string name="status_not_charging">未充電</string>

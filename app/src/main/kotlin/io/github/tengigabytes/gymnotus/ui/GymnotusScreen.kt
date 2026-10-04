@@ -40,11 +40,12 @@ private val SETUP_PERMISSIONS = arrayOf(Manifest.permission.POST_NOTIFICATIONS, 
 
 private enum class Page(@StringRes val label: Int) {
     LIVE(R.string.tab_live),
+    DASHBOARD(R.string.tab_dashboard),
     LOG(R.string.tab_log),
     DETAILS(R.string.tab_details),
 }
 
-/** The three pages and what they share: the sampler's state, the chart selection, and the system dialogs. */
+/** The pages and what they share: the sampler's state, the chart selection, and the system dialogs. */
 @Composable
 fun GymnotusScreen(viewModel: ProbeViewModel) {
     val state by viewModel.state.collectAsState()
@@ -106,6 +107,7 @@ fun GymnotusScreen(viewModel: ProbeViewModel) {
                     onShowSetup = { page = Page.DETAILS },
                     onRetry = viewModel::retry,
                 )
+                Page.DASHBOARD -> DashboardTab(state, history, deviceMap, onRetry = viewModel::retry)
                 Page.LOG -> LogTab(
                     state = state,
                     onStartLog = {

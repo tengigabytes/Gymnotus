@@ -16,6 +16,7 @@ Maps are bundled into the app as assets. The app uses the first file whose `devi
 | `batteryRail` | no | Rail that measures the battery's output; the root of the tree on battery power |
 | `sources` | yes | Where rails are measured: `id`, display `name`, and a `railPattern` regular expression matched against the whole rail name (the part inside the brackets of the monitor name) |
 | `unmonitored` | no | Rails the device has but exposes no monitor for: `rail`, `subsystem`, `kind` (`buck` or `ldo`) |
+| `crossChecks` | no | Consumers the system models itself and the rails each should add up to: `consumer` (the CONSUMER monitor's name) and `rails`. The app shows the difference, as a check on the readings. Only list a pair after seeing it hold in exported data. |
 
 Regular expressions must not rely on backslash escapes that JSON would need doubled; prefer `[0-9]` to `\d`.
 

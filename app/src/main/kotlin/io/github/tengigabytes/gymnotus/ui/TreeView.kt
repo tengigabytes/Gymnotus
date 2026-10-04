@@ -38,14 +38,21 @@ import io.github.tengigabytes.gymnotus.power.TreeInput
 import io.github.tengigabytes.gymnotus.sampler.RailRow
 import java.util.Locale
 
-fun buildTree(rails: List<RailRow>, grouping: TreeGrouping, battery: BatterySample?, map: DeviceMap?): PowerTree = PowerTreeBuilder.build(
-    rails.filter { it.info.type == MonitorType.MEASUREMENT }.map {
-        TreeInput(it.info.index, it.info.name, it.reading?.powerMw)
-    },
-    grouping,
-    battery?.onExternalPower,
-    map,
-)
+// Groups and rails are put in the order the system lists the monitors, not by power: readings change twice a
+// second, and a list that re-sorts itself that often cannot be read.
+fun buildTree(rails: List<RailRow>, grouping: TreeGrouping, battery: BatterySample?, map: DeviceMap?): PowerTree {
+    val tree = PowerTreeBuilder.build(
+        rails.filter { it.info.type == MonitorType.MEASUREMENT }.map { TreeInput(it.info.index, it.info.name, it.reading?.powerMw) },
+        grouping,
+        battery?.onExternalPower,
+        map,
+    )
+    return tree.copy(
+        groups = tree.groups
+            .map { group -> group.copy(leaves = group.leaves.sortedBy { it.index }) }
+            .sortedBy { group -> group.leaves.minOf { it.index } },
+    )
+}
 
 /**
  * Grouped MEASUREMENT rails followed by the CONSUMER list, which is shown separately and never summed in.
@@ -202,25 +209,9 @@ fun groupKey(grouping: TreeGrouping, name: String) = "g:$grouping:$name"
 /** What the chart shows before the user picks anything: the battery rail and the three largest subsystems. */
 fun selectDefaults(selection: ChartSelection, tree: PowerTree, batteryLabel: String) {
     tree.batteryRailIndex?.let { selection.toggle(railKey(it), batteryLabel, listOf(it)) }
-    for (group in tree.groups.take(3)) {
+    for (group in tree.groups.sortedByDescending { it.powerMw ?: Double.NEGATIVE_INFINITY }.take(3)) {
         selection.toggle(groupKey(TreeGrouping.SUBSYSTEM, group.name), group.name, group.leaves.map { it.index })
     }
-}
-
-/** BatteryManager's own numbers, as an independent cross-check of the battery rail. */
-@Composable
-fun batteryLine(battery: BatterySample?): String {
-    if (battery == null) return stringResource(R.string.battery_none)
-    val status = when (battery.status) {
-        2 -> stringResource(R.string.status_charging)
-        3 -> stringResource(R.string.status_discharging)
-        4 -> stringResource(R.string.status_not_charging)
-        5 -> stringResource(R.string.status_full)
-        else -> stringResource(R.string.status_other, battery.status?.toString() ?: "?")
-    }
-    val current = battery.currentUa?.let { String.format(Locale.ROOT, "%.1f mA", it / 1000.0) } ?: "? mA"
-    val voltage = battery.voltageMv?.let { "$it mV" } ?: "? mV"
-    return stringResource(R.string.battery_line, current, voltage, formatPower(battery.powerMw), status, battery.plugged?.toString() ?: "?")
 }
 
 @Composable

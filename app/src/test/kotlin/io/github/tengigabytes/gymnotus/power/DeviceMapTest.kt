@@ -44,6 +44,15 @@ class DeviceMapTest {
     }
 
     @Test
+    fun blazerCrossChecksNameRailsTheMapKnows() {
+        assertEquals(listOf("S4M_VDD_CPU", "S11M_VDD_CPU_M"), blazer.crossChecks.single { it.consumer == "CPU/0" }.rails)
+        for (check in blazer.crossChecks) {
+            assertTrue("${check.consumer}: no rails", check.rails.isNotEmpty())
+            for (rail in check.rails) assertTrue("${check.consumer}: unknown rail $rail", blazer.sourceOf(rail) != null)
+        }
+    }
+
+    @Test
     fun mapWithoutOptionalFields() {
         val map = DeviceMap.parse("""{"devices":["x"],"sources":[{"id":"a","name":"A","railPattern":"^A.*$"}]}""")
         assertNull(map.batteryRail)

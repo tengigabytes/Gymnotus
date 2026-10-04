@@ -44,6 +44,7 @@ import io.github.tengigabytes.gymnotus.power.SankeyNode
 import io.github.tengigabytes.gymnotus.power.SankeySpan
 import io.github.tengigabytes.gymnotus.power.TreeGrouping
 import java.util.Locale
+import kotlin.math.abs
 
 private val NODE_WIDTH = 8.dp
 private val SUBSYSTEM_LABEL_WIDTH = 96.dp
@@ -55,11 +56,19 @@ private val NODE_GAP = 3.dp
  * Power flow at a glance: the root on the left, the sources in the middle, the subsystems on the right, and one
  * ribbon per rail whose width is its power. Nodes keep their order, so only the widths move as readings change.
  *
- * Tapping a source or a subsystem adds it to (or removes it from) the chart; a charted node, and the ribbons
- * that pass through it, take that series' colour. Everything else is neutral.
+ * A charted node, and the ribbons that pass through it, take that series' colour; everything else is neutral.
+ * Tapping a source or a subsystem reports it through [onNode], so the caller can show which rails it is made of.
+ *
+ * @param railsSumMw the sum of the measured rails computed independently of [model], for the consistency line
  */
 @Composable
-fun SankeyDiagram(model: SankeyModel, selection: ChartSelection, plotHeight: Dp) {
+fun SankeyDiagram(
+    model: SankeyModel,
+    selection: ChartSelection,
+    plotHeight: Dp,
+    railsSumMw: Double?,
+    onNode: (TreeGrouping, String) -> Unit,
+) {
     val colors = chartColors()
     val density = LocalDensity.current
     val measurer = rememberTextMeasurer()
@@ -82,7 +91,7 @@ fun SankeyDiagram(model: SankeyModel, selection: ChartSelection, plotHeight: Dp)
     val currentLayout by rememberUpdatedState(layout)
     val currentSourceX by rememberUpdatedState(sourceX)
     val currentSubsystemX by rememberUpdatedState(subsystemX)
-    val currentOtherLabel by rememberUpdatedState(otherLabel)
+    val currentOnNode by rememberUpdatedState(onNode)
 
     Column(
         Modifier
@@ -101,10 +110,10 @@ fun SankeyDiagram(model: SankeyModel, selection: ChartSelection, plotHeight: Dp)
                         // Hit areas are the node plus its label, and as tall as the slot, so small nodes can be hit.
                         if (tap.x >= currentSubsystemX - nodeWidth) {
                             val i = currentLayout.subsystems.indexOfFirst { tap.y in it.slot.top..it.slot.bottom }
-                            if (i >= 0) toggle(selection, TreeGrouping.SUBSYSTEM, currentModel.subsystems[i], currentOtherLabel)
+                            if (i >= 0) currentOnNode(TreeGrouping.SUBSYSTEM, currentModel.subsystems[i].name)
                         } else if (tap.x in (currentSourceX - nodeWidth)..(currentSourceX + nodeWidth + sourceLabelWidth)) {
                             val i = currentLayout.sources.indexOfFirst { tap.y in it.slot.top..it.slot.bottom }
-                            if (i >= 0) toggle(selection, TreeGrouping.SOURCE, currentModel.sources[i], null)
+                            if (i >= 0) currentOnNode(TreeGrouping.SOURCE, currentModel.sources[i].name)
                         }
                     }
                 },
@@ -169,13 +178,32 @@ fun SankeyDiagram(model: SankeyModel, selection: ChartSelection, plotHeight: Dp)
                 label(measurer, shown, node.slot, subsystemX + nodeWidth + 4.dp.toPx(), SUBSYSTEM_LABEL_WIDTH.toPx() - 4.dp.toPx(), labelStyle, valueStyle, twoLines = false)
             }
         }
+        ConsistencyLine(model, railsSumMw, colors)
         Text(stringResource(R.string.sankey_hint), color = colors.secondary, fontSize = 12.sp)
     }
 }
 
-/** @param label shown in the chart legend instead of the node's own name, for the folded "other" node */
-private fun toggle(selection: ChartSelection, grouping: TreeGrouping, node: SankeyNode, label: String?) =
-    selection.toggle(groupKey(grouping, node.name), label ?: node.name, node.indices)
+/**
+ * The same power counted three ways: by source, by subsystem, and straight from the rails. They can only differ
+ * if a rail was dropped or counted twice on the way into the diagram, so a mismatch means the picture is wrong.
+ */
+@Composable
+private fun ConsistencyLine(model: SankeyModel, railsSumMw: Double?, colors: ChartColors) {
+    val sources = model.sources.sumOf { it.valueMw }
+    val subsystems = model.subsystems.sumOf { it.valueMw }
+    val rails = railsSumMw ?: return
+    val consistent = abs(sources - rails) < CONSISTENCY_TOLERANCE_MW && abs(subsystems - rails) < CONSISTENCY_TOLERANCE_MW
+    fun one(value: Double) = String.format(Locale.ROOT, "%,.1f", value)
+    Text(
+        stringResource(if (consistent) R.string.check_ok else R.string.check_bad, one(sources), one(subsystems), one(rails)),
+        // The wording carries the result; the colour only draws the eye to a failure.
+        color = if (consistent) colors.secondary else Color(0xFFD03B3B),
+        fontSize = 12.sp,
+    )
+}
+
+// Sums of the same doubles in a different order differ by rounding only.
+private const val CONSISTENCY_TOLERANCE_MW = 0.01
 
 /** A band from ([x0], [from]) to ([x1], [to]) that leaves and arrives horizontally. */
 private fun DrawScope.ribbon(x0: Float, from: SankeySpan, x1: Float, to: SankeySpan, color: Color) {
