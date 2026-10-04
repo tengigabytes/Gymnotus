@@ -1,0 +1,116 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Summary -->
+    <string name="list_waiting">正在讀取電源監測清單…</string>
+    <string name="list_empty">這台裝置沒有回報任何電源監測項目（getSupportedPowerMonitors 回傳空清單）。</string>
+    <string name="retry">重試</string>
+    <string name="summary_monitors">%1$d 個監測項目：%2$d 條實測 rail、%3$d 個推估子系統</string>
+    <string name="summary_polls">輪詢 %1$d 次 · 錯誤 %2$d 次 · 呼叫延遲 %3$s</string>
+    <string name="last_error">最近一次錯誤：%1$s</string>
+    <string name="mode_fast">快速模式：讀數約每 0.5 秒更新一次。</string>
+    <string name="mode_standard">標準模式：系統每 20 秒才更新一次讀數。完成一次性設定後可縮短到約 0.5 秒：</string>
+    <string name="setup_steps">1. 連上 Wi-Fi。2. 按「設定快速模式」，允許通知與鄰近裝置權限。3. 在開發人員選項開啟「無線偵錯」，點「使用配對碼配對裝置」。4. 拉下通知列，把配對碼輸入 Gymnotus 的通知。</string>
+    <string name="setup_button">設定快速模式</string>
+    <string name="developer_options">開發人員選項</string>
+    <string name="setup_computer">或從電腦執行：</string>
+    <string name="overhead_notice">Gymnotus 本身也是負載：它的輪詢與畫面更新會計入 CPU 與螢幕的 rail。</string>
+
+    <!-- Controls -->
+    <string name="interval_ms">%1$d ms</string>
+    <string name="reset">重置</string>
+    <string name="export_buffer">匯出緩衝區</string>
+    <string name="buffer_span">%1$s / %2$d 秒</string>
+    <string name="start_log">開始記錄</string>
+    <string name="stop_log">停止記錄</string>
+    <string name="log_hint">把每次輪詢寫入 CSV 檔，在背景也會持續。</string>
+    <string name="log_status">%1$s · 已記錄 %2$d 次 · %3$s</string>
+    <string name="slow_screen_off">螢幕關閉時每 %1$d 秒輪詢一次</string>
+    <string name="view_subsystem">依子系統</string>
+    <string name="view_source">依電源來源</string>
+    <string name="view_raw">原始讀數</string>
+
+    <!-- Shared values -->
+    <string name="no_data">無資料</string>
+    <string name="power_mw">%1$s mW</string>
+    <string name="min_med_max">最小/中位/最大 %1$d/%2$d/%3$d ms</string>
+    <string name="min_med_max_none">最小/中位/最大 —</string>
+
+    <!-- Raw view -->
+    <string name="raw_section">%1$s（%2$d）</string>
+    <string name="raw_stale">%1$s mW（未更新）</string>
+    <string name="raw_reading">能量 %1$s · 時間戳記 %2$s ms · 資料年齡 %3$d ms</string>
+    <string name="raw_energy_uj">%1$s µJ</string>
+    <string name="raw_energy_unavailable">不可用</string>
+    <string name="raw_intervals">更新間隔：n=%1$d，%2$s</string>
+    <string name="raw_counts">重複 %1$d/%2$d（%3$s）· 無資料 %4$d · 重置 %5$d</string>
+    <string name="raw_stale_energy">時間戳記未變但能量改變：%1$d</string>
+
+    <!-- Tree -->
+    <string name="tree_root_battery">電池輸出</string>
+    <string name="tree_root_sum">實測 rail 合計</string>
+    <string name="tree_chart_battery">把電池 rail 加入圖表</string>
+    <string name="tree_battery_root_detail">%1$s · 下方實測 rail 合計 %2$s</string>
+    <string name="tree_external">外接電源中：沒有整機總功率。%1$s（%2$s）只計電池放電。</string>
+    <string name="tree_source_unknown">電源狀態不明：沒有整機總功率。%1$s（%2$s）只計電池放電。</string>
+    <string name="battery_line">BatteryManager（瞬時值，正負號依裝置回報）：%1$s × %2$s = %3$s · %4$s · plugged=%5$s</string>
+    <string name="battery_none">BatteryManager：尚無取樣</string>
+    <string name="status_charging">充電中</string>
+    <string name="status_discharging">放電中</string>
+    <string name="status_not_charging">未充電</string>
+    <string name="status_full">已充飽</string>
+    <string name="status_other">狀態 %1$s</string>
+    <string name="data_age">資料年齡 %1$s 秒</string>
+    <string name="no_data_yet">尚無資料</string>
+    <string name="rails_missing">%1$d 條 rail 無資料</string>
+    <string name="map_none">沒有 %1$s 的機型對應表：電源來源依 rail 名稱推測，rail 之間的供電關係未知。</string>
+    <string name="map_line">機型對應表：%1$s。來源名稱有依據；哪條 LDO 接在哪條 buck 之下則未公開。</string>
+    <string name="map_unmonitored">沒有監測通道的 rail：%1$s。</string>
+    <string name="map_unmonitored_ldos">沒有監測通道的 rail：%1$s，以及 %2$d 條 LDO。</string>
+    <string name="group_missing">%1$d 條無資料</string>
+    <string name="unmeasured">未量測 · 電池 rail − 實測 rail</string>
+    <string name="consumer_header">推估子系統（%1$d）· 與上方 rail 重疊</string>
+    <string name="battery_series">電池 rail</string>
+
+    <!-- Chart -->
+    <string name="chart_title">功率變化（mW）</string>
+    <string name="window_1min">1 分鐘</string>
+    <string name="window_5min">5 分鐘</string>
+    <string name="chart_empty">點下方任一列即可加入圖表（最多 %1$d 條）。</string>
+    <string name="chart_collecting">正在收集讀數…</string>
+    <string name="chart_values_latest">數值：最新 · 點或拖曳圖表可讀取某一時刻</string>
+    <string name="chart_values_at">數值：%1$s 秒前 · 點一下圖表回到最新</string>
+    <string name="chart_now">現在</string>
+    <string name="chart_seconds_ago">−%1$d 秒</string>
+
+    <!-- Messages -->
+    <string name="msg_nothing_to_export">還沒有可匯出的資料</string>
+    <string name="msg_exported">已匯出 %1$d 次輪詢 × %2$d 個監測項目</string>
+    <string name="msg_export_failed">匯出失敗：%1$s</string>
+    <string name="msg_log_closed">記錄已結束，共 %1$d 次輪詢</string>
+    <string name="msg_log_write_failed">寫入記錄失敗：%1$s</string>
+    <string name="msg_setup_needs_notifications">設定快速模式需要通知權限：配對碼要在通知裡輸入。</string>
+    <string name="msg_setup_posted">已送出設定通知，請依上方步驟操作。</string>
+    <string name="msg_setup_posted_manual">已送出設定通知。沒有區域網路權限就無法自動找到連接埠：請回覆三個數字（配對碼、配對連接埠、無線偵錯連接埠）。</string>
+
+    <!-- Fast mode setup -->
+    <string name="adb_no_pairing_port">找不到配對連接埠。請回覆三個數字：配對碼、配對對話框上的連接埠、無線偵錯畫面上的連接埠。</string>
+    <string name="adb_pair_refused">配對被拒絕，請確認配對碼後再試一次。</string>
+    <string name="adb_no_connect_port">已配對，但找不到連線用的連接埠。請重新配對並回覆三個數字：配對碼、配對連接埠、無線偵錯連接埠。</string>
+    <string name="adb_connect_failed">已配對，但連線到連接埠 %1$d 失敗。</string>
+    <string name="adb_success">快速模式設定完成。之後不再需要無線偵錯，可以關閉。</string>
+    <string name="adb_grant_no_effect">pm grant 沒有生效：%1$s</string>
+    <string name="adb_failed">設定失敗（%1$s）：%2$s</string>
+    <string name="notif_setup_channel">快速模式設定</string>
+    <string name="notif_setup_title">Gymnotus 快速模式</string>
+    <string name="notif_setup_prompt">在「設定 › 開發人員選項 › 無線偵錯」點「使用配對碼配對裝置」，然後在這裡輸入配對碼。</string>
+    <string name="notif_setup_bad_code">這不是六位數的配對碼。</string>
+    <string name="notif_setup_pairing">配對中…</string>
+    <string name="notif_setup_action">輸入配對碼</string>
+    <string name="notif_setup_input_label">配對碼</string>
+
+    <!-- Logging notification -->
+    <string name="notif_log_channel">記錄</string>
+    <string name="notif_log_title">Gymnotus 正在記錄電源軌</string>
+    <string name="notif_log_text">點一下開啟，或在這裡停止記錄。</string>
+    <string name="notif_log_stop">停止</string>
+</resources>

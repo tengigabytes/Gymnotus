@@ -16,6 +16,7 @@ import android.sun.security.x509.X500Name
 import android.sun.security.x509.X509CertImpl
 import android.sun.security.x509.X509CertInfo
 import io.github.muntashirakon.adb.AbsAdbConnectionManager
+import io.github.tengigabytes.gymnotus.R
 import io.github.muntashirakon.adb.android.AdbMdns
 import java.io.File
 import java.io.IOException
@@ -85,7 +86,6 @@ private class ConnectionManager(context: Context) : AbsAdbConnectionManager() {
 private const val CONNECT_TIMEOUT_MS = 10_000L
 private const val DISCOVERY_TIMEOUT_MS = 8_000L
 private const val LOCAL_NETWORK_PERMISSION_SDK = 37
-private const val SUCCESS = "Fast mode is set up. Wireless debugging is no longer needed and can be turned off."
 
 // adbd listens on every interface; loopback keeps the whole exchange on the device.
 private const val LOOPBACK = "127.0.0.1"
@@ -115,17 +115,17 @@ object SelfAdb {
             val manager = ConnectionManager(context)
             step = "finding the pairing port"
             val pairPort = pairingPort ?: discover(context, AdbMdns.SERVICE_TYPE_TLS_PAIRING)
-                ?: return@withContext GrantResult(false, "Pairing port not found. Reply with three numbers: code, the port in the pairing dialog, the port on the Wireless debugging screen.")
+                ?: return@withContext GrantResult(false, context.getString(R.string.adb_no_pairing_port))
             step = "pairing on port $pairPort"
             if (!manager.pair(LOOPBACK, pairPort, pairingCode)) {
-                return@withContext GrantResult(false, "Pairing was refused. Check the code and try again.")
+                return@withContext GrantResult(false, context.getString(R.string.adb_pair_refused))
             }
             step = "finding the connect port"
             val port = connectPort ?: discover(context, AdbMdns.SERVICE_TYPE_TLS_CONNECT)
-                ?: return@withContext GrantResult(false, "Paired, but the connect port was not found. Pair again and reply with three numbers: code, pairing port, Wireless debugging port.")
+                ?: return@withContext GrantResult(false, context.getString(R.string.adb_no_connect_port))
             step = "connecting on port $port"
             if (!manager.connect(LOOPBACK, port)) {
-                return@withContext GrantResult(false, "Paired, but connecting on port $port failed.")
+                return@withContext GrantResult(false, context.getString(R.string.adb_connect_failed, port))
             }
             step = "running pm grant"
             val output = StringBuilder()
@@ -141,13 +141,18 @@ object SelfAdb {
                 }
             }
             if (isGranted(context, permission)) {
-                GrantResult(true, SUCCESS)
+                GrantResult(true, context.getString(R.string.adb_success))
             } else {
-                GrantResult(false, "pm grant did not take effect: ${output.trim()}")
+                GrantResult(false, context.getString(R.string.adb_grant_no_effect, output.trim()))
             }
         } catch (e: Exception) {
             // What counts is whether the permission is held, not how the connection ended.
-            if (isGranted(context, permission)) GrantResult(true, SUCCESS) else GrantResult(false, "Failed while $step: $e")
+            if (isGranted(context, permission)) {
+                GrantResult(true, context.getString(R.string.adb_success))
+            } else {
+                // The step is an English technical phrase, like the exception text next to it.
+                GrantResult(false, context.getString(R.string.adb_failed, step, e.toString()))
+            }
         }
     }
 

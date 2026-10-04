@@ -56,17 +56,17 @@ class LogService : Service() {
 
     private fun notification(): Notification {
         getSystemService(NotificationManager::class.java).createNotificationChannel(
-            NotificationChannel(CHANNEL_ID, "Logging", NotificationManager.IMPORTANCE_LOW),
+            NotificationChannel(CHANNEL_ID, getString(R.string.notif_log_channel), NotificationManager.IMPORTANCE_LOW),
         )
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 0, stopIntent(this), PendingIntent.FLAG_IMMUTABLE)
         return Notification.Builder(this, CHANNEL_ID)
             .setSmallIcon(R.drawable.ic_stat_bolt)
-            .setContentTitle("Gymnotus is logging power rails")
-            .setContentText("Tap to open, or stop the log here.")
+            .setContentTitle(getString(R.string.notif_log_title))
+            .setContentText(getString(R.string.notif_log_text))
             .setContentIntent(open)
             .setOngoing(true)
-            .addAction(Notification.Action.Builder(null, "Stop", stop).build())
+            .addAction(Notification.Action.Builder(null, getString(R.string.notif_log_stop), stop).build())
             .build()
     }
 

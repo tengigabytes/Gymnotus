@@ -1,4 +1,118 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">Gymnotus</string>
+    <string name="app_name" translatable="false">Gymnotus</string>
+
+    <!-- Summary -->
+    <string name="list_waiting">Reading the list of power monitors…</string>
+    <string name="list_empty">This device reports no power monitors (getSupportedPowerMonitors returned an empty list).</string>
+    <string name="retry">Retry</string>
+    <string name="summary_monitors">%1$d monitors: %2$d measured rails, %3$d modelled consumers</string>
+    <string name="summary_polls">%1$d polls · %2$d errors · call latency %3$s</string>
+    <string name="last_error">Last error: %1$s</string>
+    <string name="mode_fast">Fast mode: readings refresh about every 0.5 s.</string>
+    <string name="mode_standard">Standard mode: the system refreshes readings every 20 s. A one-time setup makes that about 0.5 s:</string>
+    <string name="setup_steps">1. Connect to Wi-Fi. 2. Tap “Set up fast mode” and allow notifications and nearby devices. 3. In Developer options, turn on Wireless debugging and tap “Pair device with pairing code”. 4. Pull down the notifications and type the code into the Gymnotus one.</string>
+    <string name="setup_button">Set up fast mode</string>
+    <string name="developer_options">Developer options</string>
+    <string name="setup_computer">Or from a computer:</string>
+    <string name="overhead_notice">Gymnotus adds load itself: its polling and screen updates show up in the CPU and display rails.</string>
+
+    <!-- Controls -->
+    <string name="interval_ms">%1$d ms</string>
+    <string name="reset">Reset</string>
+    <string name="export_buffer">Export buffer</string>
+    <string name="buffer_span">%1$s / %2$d s</string>
+    <string name="start_log">Start log</string>
+    <string name="stop_log">Stop log</string>
+    <string name="log_hint">Records every poll to a CSV file, also in the background.</string>
+    <string name="log_status">%1$s · %2$d polls · %3$s</string>
+    <string name="slow_screen_off">Poll every %1$d s while the screen is off</string>
+    <string name="view_subsystem">By subsystem</string>
+    <string name="view_source">By source</string>
+    <string name="view_raw">Raw</string>
+
+    <!-- Shared values -->
+    <string name="no_data">no data</string>
+    <string name="power_mw">%1$s mW</string>
+    <string name="min_med_max">min/med/max %1$d/%2$d/%3$d ms</string>
+    <string name="min_med_max_none">min/med/max —</string>
+
+    <!-- Raw view -->
+    <string name="raw_section">%1$s (%2$d)</string>
+    <string name="raw_stale">%1$s mW (not updated)</string>
+    <string name="raw_reading">Energy %1$s · timestamp %2$s ms · age %3$d ms</string>
+    <string name="raw_energy_uj">%1$s µJ</string>
+    <string name="raw_energy_unavailable">unavailable</string>
+    <string name="raw_intervals">Update interval: n=%1$d, %2$s</string>
+    <string name="raw_counts">Repeats %1$d/%2$d (%3$s) · unavailable %4$d · resets %5$d</string>
+    <string name="raw_stale_energy">Energy changed at an unchanged timestamp: %1$d</string>
+
+    <!-- Tree -->
+    <string name="tree_root_battery">Battery output</string>
+    <string name="tree_root_sum">Σ measured rails</string>
+    <string name="tree_chart_battery">Chart the battery rail</string>
+    <string name="tree_battery_root_detail">%1$s · measured rails below sum to %2$s</string>
+    <string name="tree_external">On external power: no device total. %1$s (%2$s) counts battery discharge only.</string>
+    <string name="tree_source_unknown">Power source unknown: no device total. %1$s (%2$s) counts battery discharge only.</string>
+    <string name="battery_line">BatteryManager (instant, sign as reported): %1$s × %2$s = %3$s · %4$s · plugged=%5$s</string>
+    <string name="battery_none">BatteryManager: no sample yet</string>
+    <string name="status_charging">charging</string>
+    <string name="status_discharging">discharging</string>
+    <string name="status_not_charging">not charging</string>
+    <string name="status_full">full</string>
+    <string name="status_other">status %1$s</string>
+    <string name="data_age">Data age %1$s s</string>
+    <string name="no_data_yet">No data yet</string>
+    <string name="rails_missing">%1$d rails without data</string>
+    <string name="map_none">No device map for %1$s: sources are guessed from rail names, and how rails feed each other is unknown.</string>
+    <string name="map_line">Device map: %1$s. It names the sources; which LDO hangs off which buck is not published.</string>
+    <string name="map_unmonitored">Rails without a monitor: %1$s.</string>
+    <string name="map_unmonitored_ldos">Rails without a monitor: %1$s and %2$d LDOs.</string>
+    <string name="group_missing">%1$d without data</string>
+    <string name="unmeasured">Unmeasured · battery rail − measured rails</string>
+    <string name="consumer_header">Modelled consumers (%1$d) · overlap the rails above</string>
+    <string name="battery_series">Battery rail</string>
+
+    <!-- Chart -->
+    <string name="chart_title">Power over time (mW)</string>
+    <string name="window_1min">1 min</string>
+    <string name="window_5min">5 min</string>
+    <string name="chart_empty">Tap a row below to chart it (up to %1$d).</string>
+    <string name="chart_collecting">Collecting readings…</string>
+    <string name="chart_values_latest">Values: latest · tap or drag the chart to read a moment</string>
+    <string name="chart_values_at">Values: %1$s s ago · tap the chart to return to latest</string>
+    <string name="chart_now">now</string>
+    <string name="chart_seconds_ago">−%1$d s</string>
+
+    <!-- Messages -->
+    <string name="msg_nothing_to_export">Nothing to export yet</string>
+    <string name="msg_exported">Exported %1$d polls × %2$d monitors</string>
+    <string name="msg_export_failed">Export failed: %1$s</string>
+    <string name="msg_log_closed">Log closed after %1$d polls</string>
+    <string name="msg_log_write_failed">Log write failed: %1$s</string>
+    <string name="msg_setup_needs_notifications">Fast mode setup needs notifications: the pairing code is typed into one.</string>
+    <string name="msg_setup_posted">Setup notification posted. Follow the steps above.</string>
+    <string name="msg_setup_posted_manual">Setup notification posted. Without local network access the ports cannot be found automatically: reply with three numbers (code, pairing port, Wireless debugging port).</string>
+
+    <!-- Fast mode setup -->
+    <string name="adb_no_pairing_port">Pairing port not found. Reply with three numbers: code, the port in the pairing dialog, the port on the Wireless debugging screen.</string>
+    <string name="adb_pair_refused">Pairing was refused. Check the code and try again.</string>
+    <string name="adb_no_connect_port">Paired, but the connect port was not found. Pair again and reply with three numbers: code, pairing port, Wireless debugging port.</string>
+    <string name="adb_connect_failed">Paired, but connecting on port %1$d failed.</string>
+    <string name="adb_success">Fast mode is set up. Wireless debugging is no longer needed and can be turned off.</string>
+    <string name="adb_grant_no_effect">pm grant did not take effect: %1$s</string>
+    <string name="adb_failed">Setup failed (%1$s): %2$s</string>
+    <string name="notif_setup_channel">Fast mode setup</string>
+    <string name="notif_setup_title">Gymnotus fast mode</string>
+    <string name="notif_setup_prompt">In Settings › Developer options › Wireless debugging, tap “Pair device with pairing code”, then type the code here.</string>
+    <string name="notif_setup_bad_code">That was not a 6-digit pairing code.</string>
+    <string name="notif_setup_pairing">Pairing…</string>
+    <string name="notif_setup_action">Enter pairing code</string>
+    <string name="notif_setup_input_label">Pairing code</string>
+
+    <!-- Logging notification -->
+    <string name="notif_log_channel">Logging</string>
+    <string name="notif_log_title">Gymnotus is logging power rails</string>
+    <string name="notif_log_text">Tap to open, or stop the log here.</string>
+    <string name="notif_log_stop">Stop</string>
 </resources>

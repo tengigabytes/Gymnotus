@@ -3,6 +3,7 @@ package io.github.tengigabytes.gymnotus.sampler
 import android.content.Context
 import android.net.Uri
 import android.os.SystemClock
+import io.github.tengigabytes.gymnotus.R
 import io.github.tengigabytes.gymnotus.power.CsvExport
 import io.github.tengigabytes.gymnotus.power.ExportMeta
 import io.github.tengigabytes.gymnotus.power.ExportStats
@@ -55,7 +56,7 @@ class LogSession(
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                onError("Log write failed: $e")
+                onError(context.getString(R.string.msg_log_write_failed, e.toString()))
             }
         }
     }

@@ -41,12 +41,14 @@ import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.layout.onSizeChanged
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import io.github.tengigabytes.gymnotus.R
 import io.github.tengigabytes.gymnotus.power.niceScale
 import io.github.tengigabytes.gymnotus.sampler.HistoryPoint
 import java.util.Locale
@@ -117,7 +119,7 @@ class ChartSelection {
     }
 }
 
-private val WINDOWS_MS = listOf(60_000L to "1 min", 300_000L to "5 min")
+private val WINDOWS_MS = listOf(60_000L to R.string.window_1min, 300_000L to R.string.window_5min)
 
 /** Power of the selected series over the last minute or five, with a tap-and-drag cursor that reads out values. */
 @Composable
@@ -148,19 +150,25 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
             .padding(12.dp),
     ) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween, verticalAlignment = Alignment.CenterVertically) {
-            Text("Power over time (mW)", color = colors.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
+            Text(stringResource(R.string.chart_title), color = colors.primary, fontWeight = FontWeight.Bold, fontSize = 14.sp)
             Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                 for ((ms, label) in WINDOWS_MS) {
-                    FilterChip(selected = windowMs == ms, onClick = { windowMs = ms }, label = { Text(label) })
+                    FilterChip(selected = windowMs == ms, onClick = { windowMs = ms }, label = { Text(stringResource(label)) })
                 }
             }
         }
         when {
-            series.isEmpty() -> Note("Tap a row below to chart it (up to ${ChartSelection.MAX_SERIES}).", colors)
-            visible.size < 2 -> Note("Collecting readings…", colors)
+            series.isEmpty() -> Note(stringResource(R.string.chart_empty, ChartSelection.MAX_SERIES), colors)
+            visible.size < 2 -> Note(stringResource(R.string.chart_collecting), colors)
             else -> {
                 val measurer = rememberTextMeasurer()
                 val tickStyle = TextStyle(fontSize = 11.sp, color = colors.muted)
+                // Resolved here: string resources cannot be read inside the draw scope.
+                val xLabels = listOf(
+                    0f to stringResource(R.string.chart_seconds_ago, (windowMs / 1000).toInt()),
+                    0.5f to stringResource(R.string.chart_seconds_ago, (windowMs / 2000).toInt()),
+                    1f to stringResource(R.string.chart_now),
+                )
                 Canvas(
                     Modifier
                         .fillMaxWidth()
@@ -181,7 +189,6 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
                         val label = measurer.measure(String.format(Locale.ROOT, "%,.0f", tick), tickStyle)
                         drawText(label, topLeft = Offset(leftPx - label.size.width - 6.dp.toPx(), y - label.size.height / 2f))
                     }
-                    val xLabels = listOf(0f to "−${windowMs / 1000} s", 0.5f to "−${windowMs / 2000} s", 1f to "now")
                     for ((fraction, text) in xLabels) {
                         val label = measurer.measure(text, tickStyle)
                         val x = (leftPx + plotWidth * fraction - label.size.width * fraction).coerceAtLeast(leftPx)
@@ -218,8 +225,12 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
                         }
                     }
                 }
-                val at = cursorIndex?.let { String.format(Locale.ROOT, "%.1f s ago", (endMs!! - visible[it].elapsedMs) / 1000.0) } ?: "latest"
-                Text("Values: $at · tap or drag the chart to read a moment", color = colors.secondary, fontSize = 12.sp)
+                val caption = if (cursorIndex != null) {
+                    stringResource(R.string.chart_values_at, String.format(Locale.ROOT, "%.1f", (endMs!! - visible[cursorIndex].elapsedMs) / 1000.0))
+                } else {
+                    stringResource(R.string.chart_values_latest)
+                }
+                Text(caption, color = colors.secondary, fontSize = 12.sp)
             }
         }
         // Identity is never colour alone: every series is named here, with its value in text ink.

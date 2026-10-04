@@ -12,9 +12,9 @@ import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.lazy.LazyListScope
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Text
@@ -23,9 +23,11 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.tengigabytes.gymnotus.R
 import io.github.tengigabytes.gymnotus.power.BatterySample
 import io.github.tengigabytes.gymnotus.power.DeviceMap
 import io.github.tengigabytes.gymnotus.power.MonitorType
@@ -45,8 +47,10 @@ fun buildTree(rails: List<RailRow>, grouping: TreeGrouping, battery: BatterySamp
     map,
 )
 
-/** Grouped MEASUREMENT rails followed by the CONSUMER list, which is shown separately and never summed in. */
-/** Rows are tappable: a tap adds the group or rail to [selection], i.e. to the chart, or takes it out again. */
+/**
+ * Grouped MEASUREMENT rails followed by the CONSUMER list, which is shown separately and never summed in.
+ * Rows are tappable: a tap adds the group or rail to [selection], i.e. to the chart, or takes it out again.
+ */
 fun LazyListScope.treeView(
     tree: PowerTree,
     rails: List<RailRow>,
@@ -63,7 +67,7 @@ fun LazyListScope.treeView(
         item(key = "group-${group.name}") {
             TreeRow(
                 name = group.name,
-                detail = if (group.missing > 0) "${group.missing} without data" else null,
+                detail = if (group.missing > 0) stringResource(R.string.group_missing, group.missing) else null,
                 powerMw = group.powerMw,
                 totalMw = tree.baseMw,
                 isGroup = true,
@@ -94,7 +98,7 @@ fun LazyListScope.treeView(
     if (consumers.isNotEmpty()) {
         item(key = "consumer-header") {
             Text(
-                text = "CONSUMER (${consumers.size}) · modelled, overlaps the rails above",
+                text = stringResource(R.string.consumer_header, consumers.size),
                 style = MaterialTheme.typography.titleSmall,
                 color = MaterialTheme.colorScheme.primary,
                 modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
@@ -118,37 +122,36 @@ fun LazyListScope.treeView(
 private fun TreeRoot(tree: PowerTree, rails: List<RailRow>, battery: BatterySample?, selection: ChartSelection, map: DeviceMap?) {
     val small = MaterialTheme.typography.bodySmall
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
+    val batteryRail = map?.batteryRail ?: PowerTreeBuilder.BATTERY_RAIL
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
         Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
-            Text(if (tree.batteryIsRoot) "Battery output" else "Σ measured rails", fontWeight = FontWeight.Bold)
+            Text(stringResource(if (tree.batteryIsRoot) R.string.tree_root_battery else R.string.tree_root_sum), fontWeight = FontWeight.Bold)
             Text(formatPower(tree.baseMw), fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
         }
         val batteryIndex = tree.batteryRailIndex
         if (batteryIndex != null) {
             // The battery rail is not a row of the tree, so it gets its own switch for the chart.
+            val label = stringResource(R.string.battery_series)
             Row(
-                Modifier.clickable { selection.toggle(railKey(batteryIndex), BATTERY_SERIES_LABEL, listOf(batteryIndex)) },
+                Modifier.clickable { selection.toggle(railKey(batteryIndex), label, listOf(batteryIndex)) },
                 horizontalArrangement = Arrangement.spacedBy(6.dp),
                 verticalAlignment = Alignment.CenterVertically,
             ) {
                 SeriesDot(selection.slotOf(railKey(batteryIndex)))
-                Text("Chart the battery rail", style = small, color = muted)
+                Text(stringResource(R.string.tree_chart_battery), style = small, color = muted)
             }
         }
         if (tree.batteryIsRoot) {
-            Text("${PowerTreeBuilder.BATTERY_RAIL} · measured rails below sum to ${formatPower(tree.railsSumMw)}", style = small, color = muted)
+            Text(stringResource(R.string.tree_battery_root_detail, batteryRail, formatPower(tree.railsSumMw)), style = small, color = muted)
         } else if (tree.hasBatteryRail) {
-            val source = if (battery?.onExternalPower == true) "On external power" else "Power source unknown"
-            Text(
-                "$source: no device total. ${PowerTreeBuilder.BATTERY_RAIL} (${formatPower(tree.batteryRailMw)}) counts battery discharge only.",
-                style = small,
-                color = muted,
-            )
+            val text = if (battery?.onExternalPower == true) R.string.tree_external else R.string.tree_source_unknown
+            Text(stringResource(text, batteryRail, formatPower(tree.batteryRailMw)), style = small, color = muted)
         }
         Text(batteryLine(battery), style = small, color = muted)
         val ageMs = rails.firstOrNull { it.info.type == MonitorType.MEASUREMENT }?.ageMs
-        val age = ageMs?.let { String.format(Locale.ROOT, "data age %.1f s", it / 1000.0) } ?: "no data yet"
-        val missing = if (tree.missing > 0) " · ${tree.missing} rails without data" else ""
+        val age = ageMs?.let { stringResource(R.string.data_age, String.format(Locale.ROOT, "%.1f", it / 1000.0)) }
+            ?: stringResource(R.string.no_data_yet)
+        val missing = if (tree.missing > 0) " · " + stringResource(R.string.rails_missing, tree.missing) else ""
         Text("$age$missing", style = small, color = muted)
         Text(mapLine(map), style = small, color = muted)
     }
@@ -194,7 +197,7 @@ private fun TreeRow(
                 modifier = Modifier.weight(1f),
             )
             Text(
-                text = formatPower(powerMw) + (share?.let { String.format(Locale.ROOT, " %5.1f%%", it * 100) } ?: ""),
+                text = formatPower(powerMw) + formatShare(share),
                 style = style,
                 fontFamily = FontFamily.Monospace,
                 fontWeight = weight,
@@ -216,9 +219,9 @@ private fun TreeRow(
 private fun UnmeasuredRow(powerMw: Double?, totalMw: Double?) {
     val share = if (powerMw != null && totalMw != null && totalMw > 0) powerMw / totalMw else null
     Row(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 4.dp), horizontalArrangement = Arrangement.SpaceBetween) {
-        Text("Unmeasured · battery rail − measured rails", fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
+        Text(stringResource(R.string.unmeasured), fontWeight = FontWeight.Bold, modifier = Modifier.weight(1f))
         Text(
-            text = formatPower(powerMw) + (share?.let { String.format(Locale.ROOT, " %5.1f%%", it * 100) } ?: ""),
+            text = formatPower(powerMw) + formatShare(share),
             fontFamily = FontFamily.Monospace,
             fontWeight = FontWeight.Bold,
         )
@@ -226,18 +229,20 @@ private fun UnmeasuredRow(powerMw: Double?, totalMw: Double?) {
 }
 
 /** Says where the grouping comes from, and which rails have no monitor and so can only show up as unmeasured. */
+@Composable
 private fun mapLine(map: DeviceMap?): String {
-    if (map == null) {
-        return "No device map for ${Build.DEVICE}: sources are guessed from rail names, and how rails feed each other is unknown."
-    }
-    val bucks = map.unmonitored.filter { it.kind != "ldo" }
-    val ldos = map.unmonitored.size - bucks.size
-    val unmonitored = if (map.unmonitored.isEmpty()) {
-        ""
+    if (map == null) return stringResource(R.string.map_none, Build.DEVICE)
+    val line = stringResource(R.string.map_line, map.description)
+    if (map.unmonitored.isEmpty()) return line
+    val bucks = map.unmonitored.filter { it.kind != "ldo" }.joinToString { it.rail }
+    val ldos = map.unmonitored.count { it.kind == "ldo" }
+    val unmonitored = if (ldos > 0) {
+        stringResource(R.string.map_unmonitored_ldos, bucks, ldos)
     } else {
-        " Rails without a monitor: ${bucks.joinToString { it.rail }}" + if (ldos > 0) " and $ldos LDOs." else "."
+        stringResource(R.string.map_unmonitored, bucks)
     }
-    return "Device map: ${map.description}. It names the sources; which LDO hangs off which buck is not published.$unmonitored"
+    // Chinese sentences end in a full-width stop and take no space after it.
+    return if (line.endsWith("。")) line + unmonitored else "$line $unmonitored"
 }
 
 fun railKey(index: Int) = "r:$index"
@@ -245,30 +250,31 @@ fun railKey(index: Int) = "r:$index"
 fun groupKey(grouping: TreeGrouping, name: String) = "g:$grouping:$name"
 
 /** What the chart shows before the user picks anything: the battery rail and the three largest subsystems. */
-fun selectDefaults(selection: ChartSelection, tree: PowerTree) {
-    tree.batteryRailIndex?.let { selection.toggle(railKey(it), BATTERY_SERIES_LABEL, listOf(it)) }
+fun selectDefaults(selection: ChartSelection, tree: PowerTree, batteryLabel: String) {
+    tree.batteryRailIndex?.let { selection.toggle(railKey(it), batteryLabel, listOf(it)) }
     for (group in tree.groups.take(3)) {
         selection.toggle(groupKey(TreeGrouping.SUBSYSTEM, group.name), group.name, group.leaves.map { it.index })
     }
 }
 
-const val BATTERY_SERIES_LABEL = "Battery rail"
-
 /** BatteryManager's own numbers, as an independent cross-check of the battery rail. */
+@Composable
 private fun batteryLine(battery: BatterySample?): String {
-    if (battery == null) return "BatteryManager: no sample yet"
+    if (battery == null) return stringResource(R.string.battery_none)
     val status = when (battery.status) {
-        2 -> "charging"
-        3 -> "discharging"
-        4 -> "not charging"
-        5 -> "full"
-        else -> "status ${battery.status ?: "?"}"
+        2 -> stringResource(R.string.status_charging)
+        3 -> stringResource(R.string.status_discharging)
+        4 -> stringResource(R.string.status_not_charging)
+        5 -> stringResource(R.string.status_full)
+        else -> stringResource(R.string.status_other, battery.status?.toString() ?: "?")
     }
     val current = battery.currentUa?.let { String.format(Locale.ROOT, "%.1f mA", it / 1000.0) } ?: "? mA"
     val voltage = battery.voltageMv?.let { "$it mV" } ?: "? mV"
-    val power = battery.powerMw?.let { String.format(Locale.ROOT, "%.1f mW", it) } ?: "no data"
-    return "BatteryManager (instant, raw sign): $current × $voltage = $power · $status · plugged=${battery.plugged ?: "?"}"
+    return stringResource(R.string.battery_line, current, voltage, formatPower(battery.powerMw), status, battery.plugged?.toString() ?: "?")
 }
 
-private fun formatPower(powerMw: Double?) =
-    if (powerMw == null) "no data" else String.format(Locale.ROOT, "%.1f mW", powerMw)
+@Composable
+private fun formatPower(powerMw: Double?): String =
+    if (powerMw == null) stringResource(R.string.no_data) else stringResource(R.string.power_mw, String.format(Locale.ROOT, "%.1f", powerMw))
+
+private fun formatShare(share: Double?) = share?.let { String.format(Locale.ROOT, " %5.1f%%", it * 100) } ?: ""

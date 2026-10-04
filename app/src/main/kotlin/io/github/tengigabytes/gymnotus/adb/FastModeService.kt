@@ -32,11 +32,11 @@ class FastModeService : Service() {
         val parts = reply.trim().split(Regex("\\s+"))
         val code = parts[0]
         if (!code.matches(Regex("\\d{6}"))) {
-            notify(this, "That was not a 6-digit pairing code.", withInput = true)
+            notify(this, getString(R.string.notif_setup_bad_code), withInput = true)
             stopSelf(startId)
             return START_NOT_STICKY
         }
-        notify(this, "Pairing…", withInput = false)
+        notify(this, getString(R.string.notif_setup_pairing), withInput = false)
         scope.launch {
             val result = SelfAdb.pairAndGrant(
                 context = applicationContext,
@@ -57,17 +57,15 @@ class FastModeService : Service() {
         private const val CHANNEL_ID = "setup"
         private const val NOTIFICATION_ID = 2
 
-        const val PROMPT = "In Settings > Developer options > Wireless debugging, tap \"Pair device with pairing code\", then type the code here."
-
         /** Shows the notification that takes the pairing code. */
-        fun showPrompt(context: Context) = notify(context, PROMPT, withInput = true)
+        fun showPrompt(context: Context) = notify(context, context.getString(R.string.notif_setup_prompt), withInput = true)
 
         private fun notify(context: Context, text: String, withInput: Boolean) {
             val manager = context.getSystemService(NotificationManager::class.java)
-            manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, "Fast mode setup", NotificationManager.IMPORTANCE_HIGH))
+            manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, context.getString(R.string.notif_setup_channel), NotificationManager.IMPORTANCE_HIGH))
             val builder = Notification.Builder(context, CHANNEL_ID)
                 .setSmallIcon(R.drawable.ic_stat_bolt)
-                .setContentTitle("Gymnotus fast mode")
+                .setContentTitle(context.getString(R.string.notif_setup_title))
                 .setContentText(text)
                 .setStyle(Notification.BigTextStyle().bigText(text))
                 .setOnlyAlertOnce(true)
@@ -79,8 +77,8 @@ class FastModeService : Service() {
                     Intent(context, FastModeService::class.java),
                     PendingIntent.FLAG_MUTABLE or PendingIntent.FLAG_UPDATE_CURRENT,
                 )
-                val input = RemoteInput.Builder(KEY_CODE).setLabel("Pairing code").build()
-                builder.addAction(Notification.Action.Builder(null, "Enter pairing code", reply).addRemoteInput(input).build())
+                val input = RemoteInput.Builder(KEY_CODE).setLabel(context.getString(R.string.notif_setup_input_label)).build()
+                builder.addAction(Notification.Action.Builder(null, context.getString(R.string.notif_setup_action), reply).addRemoteInput(input).build())
             }
             manager.notify(NOTIFICATION_ID, builder.build())
         }

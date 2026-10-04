@@ -12,6 +12,7 @@ import android.os.SystemClock
 import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -42,9 +43,11 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import io.github.tengigabytes.gymnotus.R
 import io.github.tengigabytes.gymnotus.power.IntervalSummary
 import io.github.tengigabytes.gymnotus.power.MonitorType
 import io.github.tengigabytes.gymnotus.power.ReadingStatus
@@ -70,10 +73,11 @@ fun ProbeScreen(viewModel: ProbeViewModel) {
     val history by viewModel.history.collectAsState()
     val deviceMap by viewModel.deviceMap.collectAsState()
     val selection = remember { ChartSelection() }
+    val batteryLabel = stringResource(R.string.battery_series)
     var defaultsApplied by remember { mutableStateOf(false) }
     if (!defaultsApplied && state.rails.any { it.reading?.powerMw != null }) {
         LaunchedEffect(Unit) {
-            selectDefaults(selection, buildTree(state.rails, TreeGrouping.SUBSYSTEM, state.battery, deviceMap))
+            selectDefaults(selection, buildTree(state.rails, TreeGrouping.SUBSYSTEM, state.battery, deviceMap), batteryLabel)
             defaultsApplied = true
         }
     }
@@ -94,7 +98,7 @@ fun ProbeScreen(viewModel: ProbeViewModel) {
         viewModel.setUpFastMode(notificationsAllowed = results[Manifest.permission.POST_NOTIFICATIONS] == true)
     }
 
-    Scaffold(topBar = { TopAppBar(title = { Text("Gymnotus") }) }) { padding ->
+    Scaffold(topBar = { TopAppBar(title = { Text(stringResource(R.string.app_name)) }) }) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = padding) {
             item {
                 Summary(
@@ -150,23 +154,24 @@ private fun Summary(state: SamplerState, onRetry: () -> Unit, onSetUp: () -> Uni
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Mono("${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE}) · API ${Build.VERSION.SDK_INT}")
         when (state.listState) {
-            MonitorListState.LOADING -> Mono("getSupportedPowerMonitors: waiting…")
+            MonitorListState.LOADING -> Mono(stringResource(R.string.list_waiting))
             MonitorListState.EMPTY -> {
-                Mono("getSupportedPowerMonitors returned an empty list: no power monitors on this device.")
-                OutlinedButton(onClick = onRetry) { Text("Retry") }
+                Mono(stringResource(R.string.list_empty))
+                OutlinedButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
             }
             MonitorListState.FAILED -> {
+                // The system's own error text, shown as it came.
                 Mono(state.listError.orEmpty(), error = true)
-                OutlinedButton(onClick = onRetry) { Text("Retry") }
+                OutlinedButton(onClick = onRetry) { Text(stringResource(R.string.retry)) }
             }
             MonitorListState.READY -> {
                 val measurement = state.rails.count { it.info.type == MonitorType.MEASUREMENT }
                 val consumer = state.rails.count { it.info.type == MonitorType.CONSUMER }
-                Mono("monitors ${state.rails.size}: MEASUREMENT $measurement, CONSUMER $consumer")
-                Mono("polls ${state.polls} · errors ${state.pollErrors} · call latency ${state.callLatency.minMedMax()}")
-                state.lastPollError?.let { Mono("last error: $it", error = true) }
+                Mono(stringResource(R.string.summary_monitors, state.rails.size, measurement, consumer))
+                Mono(stringResource(R.string.summary_polls, state.polls, state.pollErrors, minMedMax(state.callLatency)))
+                state.lastPollError?.let { Mono(stringResource(R.string.last_error, it), error = true) }
                 ModeNotice(state.finePermission, onSetUp)
-                Mono("Gymnotus adds load itself: its polling and screen updates show up in the CPU and display rails.")
+                Mono(stringResource(R.string.overhead_notice))
             }
         }
     }
@@ -176,14 +181,14 @@ private fun Summary(state: SamplerState, onRetry: () -> Unit, onSetUp: () -> Uni
 @Composable
 private fun ModeNotice(finePermission: Boolean, onSetUp: () -> Unit) {
     if (finePermission) {
-        Mono("Fast mode: readings refresh about every 0.5 s (fine permission granted).")
+        Mono(stringResource(R.string.mode_fast))
         return
     }
     val context = LocalContext.current
-    Mono("Standard mode: the system refreshes readings every 20 s. A one-time setup makes that about 0.5 s:")
-    Mono("1. Connect to Wi-Fi. 2. Tap Set up fast mode and allow notifications and nearby devices. 3. In Developer options, turn on Wireless debugging and tap \"Pair device with pairing code\". 4. Pull down the notifications and type the code into the Gymnotus one.")
+    Mono(stringResource(R.string.mode_standard))
+    Mono(stringResource(R.string.setup_steps))
     Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-        OutlinedButton(onClick = onSetUp) { Text("Set up fast mode") }
+        OutlinedButton(onClick = onSetUp) { Text(stringResource(R.string.setup_button)) }
         OutlinedButton(
             onClick = {
                 try {
@@ -192,9 +197,9 @@ private fun ModeNotice(finePermission: Boolean, onSetUp: () -> Unit) {
                     // Developer options are hidden until enabled in About phone; nothing to open yet.
                 }
             },
-        ) { Text("Developer options") }
+        ) { Text(stringResource(R.string.developer_options)) }
     }
-    Mono("Or from a computer:")
+    Mono(stringResource(R.string.setup_computer))
     SelectionContainer { Mono(GRANT_COMMAND) }
 }
 
@@ -218,28 +223,29 @@ private fun Controls(
                     selected = state.intervalMs == ms,
                     enabled = log == null,
                     onClick = { onInterval(ms) },
-                    label = { Text("$ms ms") },
+                    label = { Text(stringResource(R.string.interval_ms, ms)) },
                 )
             }
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
-            OutlinedButton(onClick = onReset, enabled = log == null) { Text("Reset") }
-            OutlinedButton(onClick = onExport) { Text("Export buffer") }
-            Mono(String.format(Locale.ROOT, "%.0f / %d s", state.bufferSpanMs / 1000.0, Sampler.BUFFER_SPAN_MS / 1000))
+            OutlinedButton(onClick = onReset, enabled = log == null) { Text(stringResource(R.string.reset)) }
+            OutlinedButton(onClick = onExport) { Text(stringResource(R.string.export_buffer)) }
+            val filled = String.format(Locale.ROOT, "%.0f", state.bufferSpanMs / 1000.0)
+            Mono(stringResource(R.string.buffer_span, filled, (Sampler.BUFFER_SPAN_MS / 1000).toInt()))
         }
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
             if (log == null) {
-                Button(onClick = onStartLog) { Text("Start log") }
-                Mono("Records every poll to a CSV file, also in the background.")
+                Button(onClick = onStartLog) { Text(stringResource(R.string.start_log)) }
+                Mono(stringResource(R.string.log_hint))
             } else {
-                Button(onClick = onStopLog) { Text("Stop log") }
+                Button(onClick = onStopLog) { Text(stringResource(R.string.stop_log)) }
                 LogLine(log)
             }
         }
         FilterChip(
             selected = state.slowWhenScreenOff,
             onClick = { onSlowWhenScreenOff(!state.slowWhenScreenOff) },
-            label = { Text("Poll every ${Sampler.SCREEN_OFF_INTERVAL_MS / 1000} s while the screen is off") },
+            label = { Text(stringResource(R.string.slow_screen_off, Sampler.SCREEN_OFF_INTERVAL_MS / 1000)) },
         )
         message?.let { Mono(it) }
     }
@@ -252,21 +258,22 @@ private fun LogLine(log: LogStatus) {
         return
     }
     val seconds = (SystemClock.elapsedRealtime() - log.startedElapsedMs) / 1000
-    Mono(String.format(Locale.ROOT, "%s · %d polls · %d:%02d", log.fileName, log.polls, seconds / 60, seconds % 60))
+    val elapsed = String.format(Locale.ROOT, "%d:%02d", seconds / 60, seconds % 60)
+    Mono(stringResource(R.string.log_status, log.fileName, log.polls, elapsed))
 }
 
 /** @property grouping tree grouping, or null for the flat list of raw readings and statistics */
-private enum class ViewMode(val label: String, val grouping: TreeGrouping?) {
-    BY_SUBSYSTEM("By subsystem", TreeGrouping.SUBSYSTEM),
-    BY_SOURCE("By source", TreeGrouping.SOURCE),
-    RAW("Raw", null),
+private enum class ViewMode(@StringRes val label: Int, val grouping: TreeGrouping?) {
+    BY_SUBSYSTEM(R.string.view_subsystem, TreeGrouping.SUBSYSTEM),
+    BY_SOURCE(R.string.view_source, TreeGrouping.SOURCE),
+    RAW(R.string.view_raw, null),
 }
 
 @Composable
 private fun ViewModeChips(selected: ViewMode, onSelect: (ViewMode) -> Unit) {
     Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
         for (mode in ViewMode.entries) {
-            FilterChip(selected = mode == selected, onClick = { onSelect(mode) }, label = { Text(mode.label) })
+            FilterChip(selected = mode == selected, onClick = { onSelect(mode) }, label = { Text(stringResource(mode.label)) })
         }
     }
 }
@@ -275,7 +282,8 @@ private fun LazyListScope.railSection(type: MonitorType, rows: List<RailRow>) {
     if (rows.isEmpty()) return
     item(key = "header-$type") {
         Text(
-            text = "$type (${rows.size})",
+            // The type is the API's own constant name, kept as it is.
+            text = stringResource(R.string.raw_section, type.name, rows.size),
             style = MaterialTheme.typography.titleSmall,
             color = MaterialTheme.colorScheme.primary,
             modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 16.dp, bottom = 4.dp),
@@ -294,10 +302,11 @@ private fun RailItem(row: RailRow) {
             Text(
                 text = when {
                     reading == null -> "—"
-                    reading.status == ReadingStatus.UNAVAILABLE -> "no data"
+                    reading.status == ReadingStatus.UNAVAILABLE -> stringResource(R.string.no_data)
+                    // FIRST or RESET: no power yet; the status name is the CSV's own vocabulary.
                     reading.powerMw == null -> reading.status.name
-                    reading.status == ReadingStatus.STALE -> String.format(Locale.ROOT, "%.2f mW (stale)", reading.powerMw)
-                    else -> String.format(Locale.ROOT, "%.2f mW", reading.powerMw)
+                    reading.status == ReadingStatus.STALE -> stringResource(R.string.raw_stale, twoDecimals(reading.powerMw))
+                    else -> stringResource(R.string.power_mw, twoDecimals(reading.powerMw))
                 },
                 fontFamily = FontFamily.Monospace,
                 color = if (reading?.status == ReadingStatus.OK) {
@@ -308,15 +317,13 @@ private fun RailItem(row: RailRow) {
             )
         }
         if (reading != null) {
-            val energy = reading.energyUws?.let { String.format(Locale.ROOT, "%,d µJ", it) } ?: "unavailable"
-            Mono(String.format(Locale.ROOT, "E %s · t %,d ms · age %d ms", energy, reading.timestampMs, row.ageMs))
+            val energy = reading.energyUws?.let { stringResource(R.string.raw_energy_uj, String.format(Locale.ROOT, "%,d", it)) }
+                ?: stringResource(R.string.raw_energy_unavailable)
+            Mono(stringResource(R.string.raw_reading, energy, String.format(Locale.ROOT, "%,d", reading.timestampMs), row.ageMs ?: 0L))
         }
-        Mono("Δt n=${stats.updateIntervals.count} ${stats.updateIntervals.minMedMax()}")
-        Mono(
-            "repeat ${stats.repeats}/${stats.polls} (${percent(stats.repeats, stats.polls)})" +
-                " · unavail ${stats.unavailable} · reset ${stats.resets}" +
-                if (stats.staleEnergyChanges > 0) " · E changed at same t: ${stats.staleEnergyChanges}" else "",
-        )
+        Mono(stringResource(R.string.raw_intervals, stats.updateIntervals.count, minMedMax(stats.updateIntervals)))
+        Mono(stringResource(R.string.raw_counts, stats.repeats, stats.polls, percent(stats.repeats, stats.polls), stats.unavailable, stats.resets))
+        if (stats.staleEnergyChanges > 0) Mono(stringResource(R.string.raw_stale_energy, stats.staleEnergyChanges), error = true)
     }
     HorizontalDivider()
 }
@@ -331,8 +338,15 @@ private fun Mono(text: String, error: Boolean = false) {
     )
 }
 
-private fun IntervalSummary.minMedMax() =
-    if (count == 0L) "min/med/max —" else "min/med/max $minMs/$medianMs/$maxMs ms"
+@Composable
+private fun minMedMax(summary: IntervalSummary): String =
+    if (summary.count == 0L) {
+        stringResource(R.string.min_med_max_none)
+    } else {
+        stringResource(R.string.min_med_max, summary.minMs ?: 0L, summary.medianMs ?: 0L, summary.maxMs ?: 0L)
+    }
+
+private fun twoDecimals(value: Double) = String.format(Locale.ROOT, "%.2f", value)
 
 private fun percent(part: Long, total: Long) =
     if (total == 0L) "—" else String.format(Locale.ROOT, "%.1f%%", 100.0 * part / total)

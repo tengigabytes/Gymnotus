@@ -5,9 +5,11 @@ import android.content.Intent
 import android.net.Uri
 import android.os.Build
 import android.provider.OpenableColumns
+import androidx.annotation.StringRes
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.tengigabytes.gymnotus.GymnotusApp
+import io.github.tengigabytes.gymnotus.R
 import io.github.tengigabytes.gymnotus.adb.FastModeService
 import io.github.tengigabytes.gymnotus.adb.SelfAdb
 import io.github.tengigabytes.gymnotus.power.CsvExport
@@ -64,7 +66,7 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
     fun prepareExport(): String? {
         pendingExport = sampler.snapshot()
         if (pendingExport == null) {
-            _message.value = "Nothing to export yet"
+            _message.value = text(R.string.msg_nothing_to_export)
             return null
         }
         return sampler.suggestedFileName("buffer")
@@ -86,11 +88,11 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
                         CsvExport.write(it, snapshot.meta, snapshot.monitors, snapshot.polls, snapshot.stats)
                     }
                 }
-                "Exported ${snapshot.polls.size} polls x ${snapshot.monitors.size} monitors"
+                text(R.string.msg_exported, snapshot.polls.size, snapshot.monitors.size)
             } catch (e: CancellationException) {
                 throw e
             } catch (e: Exception) {
-                "Export failed: $e"
+                text(R.string.msg_export_failed, e.toString())
             }
         }
     }
@@ -109,7 +111,7 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
         val app = getApplication<Application>()
         val polls = state.value.log?.polls
         app.startService(LogService.stopIntent(app))
-        _message.value = polls?.let { "Log closed after $it polls" }
+        _message.value = polls?.let { text(R.string.msg_log_closed, it) }
     }
 
     fun setSlowWhenScreenOff(enabled: Boolean) = sampler.setSlowWhenScreenOff(enabled)
@@ -117,21 +119,18 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
     /** Shows the notification that takes the wireless-debugging pairing code; the rest happens in FastModeService. */
     fun setUpFastMode(notificationsAllowed: Boolean) {
         if (!notificationsAllowed) {
-            _message.value = "Fast mode setup needs notifications: the pairing code is typed into one."
+            _message.value = text(R.string.msg_setup_needs_notifications)
             return
         }
         FastModeService.showPrompt(getApplication())
-        _message.value = if (SelfAdb.canDiscover(getApplication())) {
-            "Setup notification posted. Follow the steps above."
-        } else {
-            "Setup notification posted. Without local network access the ports cannot be found automatically: " +
-                "reply with three numbers (code, pairing port, Wireless debugging port)."
-        }
+        _message.value = text(if (SelfAdb.canDiscover(getApplication())) R.string.msg_setup_posted else R.string.msg_setup_posted_manual)
     }
 
     override fun onCleared() {
         stop()
     }
+
+    private fun text(@StringRes id: Int, vararg args: Any): String = getApplication<Application>().getString(id, *args)
 
     private fun loadDeviceMap(): DeviceMap? {
         val assets = getApplication<Application>().assets
