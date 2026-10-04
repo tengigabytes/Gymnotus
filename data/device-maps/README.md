@@ -33,3 +33,8 @@ Regular expressions must not rely on backslash escapes that JSON would need doub
 | File | Devices | Checked on a device |
 |---|---|---|
 | `blazer.json` | Pixel 10 Pro (`blazer`), Pixel 10 Pro XL (`mustang`) | Pixel 10 Pro, Android 17: the 32 monitored rail names match the device tree. `mustang` is included because its PMIC device tree is identical; it has not been checked on a device. |
+
+## Licence
+
+JSON has no comments, so the maps carry no header of their own. Like the rest of the repository they are
+Copyright © 2026 tengigabytes and Gymnotus contributors, licensed GPL-3.0-or-later.

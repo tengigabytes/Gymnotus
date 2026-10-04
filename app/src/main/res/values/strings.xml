@@ -21,6 +21,7 @@
     <string name="setting_flow_nodes_hint">The largest keep a node of their own; the rest share “other”.</string>
     <string name="section_about">About</string>
     <string name="about_version">Version %1$s</string>
+    <string name="about_copyright" translatable="false">Copyright © 2026 tengigabytes and Gymnotus contributors</string>
     <string name="about_license">Gymnotus is free software under the GNU General Public License, version 3 or later. It comes with no warranty.</string>
     <string name="about_license_button">Licence text</string>
     <string name="about_third_party">Third-party components</string>

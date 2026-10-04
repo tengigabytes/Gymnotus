@@ -60,6 +60,8 @@ adb shell pm grant io.github.tengigabytes.gymnotus android.permission.ACCESS_FIN
 
 ## 授權
 
+Copyright © 2026 tengigabytes and Gymnotus contributors
+
 Gymnotus 以 GNU General Public License 第 3 版或（由你選擇）任何更新版本授權，全文見 [LICENSE](LICENSE)。
 使用到的第三方函式庫與資料來源列在 [THIRD_PARTY.md](THIRD_PARTY.md)；隱私權政策見 [PRIVACY.md](PRIVACY.md)。
 

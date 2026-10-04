@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 tengigabytes and Gymnotus contributors
+
 package io.github.tengigabytes.gymnotus.power
 
 /** How one reading of a rail relates to the previous distinct sample of the same rail. */

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 tengigabytes and Gymnotus contributors
+
 package io.github.tengigabytes.gymnotus.ui
 
 import android.os.SystemClock

@@ -1,3 +1,6 @@
+// SPDX-License-Identifier: GPL-3.0-or-later
+// SPDX-FileCopyrightText: 2026 tengigabytes and Gymnotus contributors
+
 package io.github.tengigabytes.gymnotus.ui
 
 import android.content.ActivityNotFoundException
@@ -116,6 +119,7 @@ fun SettingsScreen(
         val context = LocalContext.current
         val version = remember { context.packageManager.getPackageInfo(context.packageName, 0).versionName.orEmpty() }
         Text(stringResource(R.string.about_version, version), style = MaterialTheme.typography.bodyLarge)
+        Text(stringResource(R.string.about_copyright), style = MaterialTheme.typography.bodyMedium)
         Text(stringResource(R.string.about_license), style = MaterialTheme.typography.bodyMedium)
         for (document in LegalDocument.entries) {
             TextButton(onClick = { onDocument(document) }) { Text(stringResource(document.title)) }
