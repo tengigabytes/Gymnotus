@@ -33,6 +33,8 @@ adb install -r app\build\outputs\apk\debug\app-debug.apk
   （裝置、rail 清單與類型、各 rail 統計），其後為長格式表格（每次輪詢每條 rail 一列）。
   缺值一律留空，不以 0 代替。pandas 可用 `pd.read_csv(path, comment="#")` 讀取。
 
+- 時間軸圖表：在 `By subsystem`／`By source` 檢視中，點任一群組或 rail 就會加入圖表（最多 8 條，再點一次移除），
+  可切換最近 1 分鐘或 5 分鐘；點或拖曳圖表可讀出某一時刻各條線的數值。
 - Start log：選擇存檔位置後，每次輪詢即時寫入 CSV；切到其他 App 或關螢幕都會繼續，通知列可停止。
   LOG 不使用 wake lock：手機休眠時輪詢暫停，rail 的累計能量不會漏，醒來後第一筆涵蓋整段休眠。
   螢幕關閉時預設改為每 5 秒輪詢一次，以免輪詢本身墊高待機功耗（可在畫面上關閉）。

@@ -11,6 +11,7 @@ import io.github.tengigabytes.gymnotus.adb.FastModeService
 import io.github.tengigabytes.gymnotus.adb.SelfAdb
 import io.github.tengigabytes.gymnotus.power.CsvExport
 import io.github.tengigabytes.gymnotus.sampler.ExportSnapshot
+import io.github.tengigabytes.gymnotus.sampler.HistoryPoint
 import io.github.tengigabytes.gymnotus.sampler.LogService
 import io.github.tengigabytes.gymnotus.sampler.Sampler
 import io.github.tengigabytes.gymnotus.sampler.SamplerState
@@ -27,6 +28,8 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
     private val sampler = (app as GymnotusApp).sampler
 
     val state: StateFlow<SamplerState> = sampler.state
+
+    val history: StateFlow<List<HistoryPoint>> = sampler.historyFlow
 
     private val _message = MutableStateFlow<String?>(null)
 

@@ -32,9 +32,11 @@ import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
@@ -65,6 +67,15 @@ private const val GRANT_COMMAND =
 fun ProbeScreen(viewModel: ProbeViewModel) {
     val state by viewModel.state.collectAsState()
     val message by viewModel.message.collectAsState()
+    val history by viewModel.history.collectAsState()
+    val selection = remember { ChartSelection() }
+    var defaultsApplied by remember { mutableStateOf(false) }
+    if (!defaultsApplied && state.rails.any { it.reading?.powerMw != null }) {
+        LaunchedEffect(Unit) {
+            selectDefaults(selection, buildTree(state.rails, TreeGrouping.SUBSYSTEM, state.battery))
+            defaultsApplied = true
+        }
+    }
     var viewMode by rememberSaveable { mutableStateOf(ViewMode.BY_SUBSYSTEM) }
     val context = LocalContext.current
     val exportLauncher = rememberLauncherForActivityResult(ActivityResultContracts.CreateDocument("text/csv")) { uri ->
@@ -118,7 +129,10 @@ fun ProbeScreen(viewModel: ProbeViewModel) {
                 item { ViewModeChips(viewMode, onSelect = { viewMode = it }) }
                 val grouping = viewMode.grouping
                 if (grouping != null) {
-                    treeView(buildTree(state.rails, grouping, state.battery), state.rails, state.battery)
+                    treeView(buildTree(state.rails, grouping, state.battery), state.rails, state.battery, grouping, selection) {
+                        // In standard mode a minute holds only three readings.
+                        TimelineChart(history, selection, defaultWindowMs = if (state.finePermission) 60_000L else 300_000L)
+                    }
                 } else {
                     // UNKNOWN first: a type this build does not know about is itself a finding.
                     for (type in listOf(MonitorType.UNKNOWN, MonitorType.MEASUREMENT, MonitorType.CONSUMER)) {

@@ -39,6 +39,7 @@ data class TreeGroup(val name: String, val powerMw: Double?, val missing: Int, v
 
 /**
  * @property hasBatteryRail whether the device reports [PowerTreeBuilder.BATTERY_RAIL] at all
+ * @property batteryRailIndex monitor index of that rail, null when the device has none
  * @property batteryRailMw power of that rail; it is the root only when [batteryIsRoot]
  * @property railsSumMw sum of every other rail that has data
  * @property unmeasuredMw battery rail minus the other rails, only when [batteryIsRoot]; negative values are
@@ -47,6 +48,7 @@ data class TreeGroup(val name: String, val powerMw: Double?, val missing: Int, v
  */
 data class PowerTree(
     val hasBatteryRail: Boolean,
+    val batteryRailIndex: Int?,
     val batteryRailMw: Double?,
     val batteryIsRoot: Boolean,
     val railsSumMw: Double?,
@@ -98,6 +100,7 @@ object PowerTreeBuilder {
         val batteryIsRoot = onExternalPower == false && batteryMw != null
         return PowerTree(
             hasBatteryRail = batteryRails.isNotEmpty(),
+            batteryRailIndex = batteryRails.firstOrNull()?.index,
             batteryRailMw = batteryMw,
             batteryIsRoot = batteryIsRoot,
             railsSumMw = railsSumMw,

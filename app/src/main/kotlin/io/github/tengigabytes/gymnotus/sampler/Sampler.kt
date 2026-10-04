@@ -17,6 +17,7 @@ import io.github.tengigabytes.gymnotus.power.MonitorInfo
 import io.github.tengigabytes.gymnotus.power.PollRecord
 import io.github.tengigabytes.gymnotus.power.PowerMonitorSource
 import io.github.tengigabytes.gymnotus.power.RailReading
+import io.github.tengigabytes.gymnotus.power.ReadingStatus
 import io.github.tengigabytes.gymnotus.power.RailStats
 import io.github.tengigabytes.gymnotus.power.RailTracker
 import io.github.tengigabytes.gymnotus.power.toInfo
@@ -54,6 +55,13 @@ enum class MonitorListState { LOADING, READY, EMPTY, FAILED }
  * @property error set when writing failed; the log is then no longer being written
  */
 data class LogStatus(val fileName: String, val startedElapsedMs: Long, val polls: Long, val error: String? = null)
+
+/**
+ * One refresh of the rails, kept for the chart.
+ *
+ * @property powerMw by monitor index; NaN where the rail had no new value in this poll
+ */
+class HistoryPoint(val elapsedMs: Long, val powerMw: FloatArray)
 
 data class SamplerState(
     val listState: MonitorListState = MonitorListState.LOADING,
@@ -101,6 +109,12 @@ class Sampler(private val context: Context) {
     private var trackers: List<RailTracker> = emptyList()
     private val callLatency = IntervalStats()
     private val buffer = ArrayDeque<PollRecord>()
+
+    private val history = ArrayDeque<HistoryPoint>()
+    private val _history = MutableStateFlow<List<HistoryPoint>>(emptyList())
+
+    /** Power per rail at each refresh over the last [BUFFER_SPAN_MS]. */
+    val historyFlow: StateFlow<List<HistoryPoint>> = _history.asStateFlow()
 
     // Without the fine permission the system refreshes every 20 s, so fast polling would only return repeats.
     private var intervalMs = if (source.hasFinePermission) FINE_INTERVAL_MS else COARSE_INTERVAL_MS
@@ -196,6 +210,8 @@ class Sampler(private val context: Context) {
         trackers.forEach { it.reset() }
         callLatency.clear()
         buffer.clear()
+        history.clear()
+        _history.value = emptyList()
         seq = 0
         pollErrors = 0
         lastPollError = null
@@ -311,6 +327,13 @@ class Sampler(private val context: Context) {
         buffer.addLast(record)
         while (record.requestElapsedMs - buffer.first().requestElapsedMs > BUFFER_SPAN_MS) buffer.removeFirst()
         log?.offer(record)
+        if (readings.any { it.status == ReadingStatus.OK }) {
+            history.addLast(
+                HistoryPoint(responseMs, FloatArray(readings.size) { i -> readings[i].takeIf { it.status == ReadingStatus.OK }?.powerMw?.toFloat() ?: Float.NaN }),
+            )
+            while (responseMs - history.first().elapsedMs > BUFFER_SPAN_MS) history.removeFirst()
+            _history.value = history.toList()
+        }
         publish(record)
     }
 
