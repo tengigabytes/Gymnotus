@@ -1,5 +1,6 @@
 package io.github.tengigabytes.gymnotus.ui
 
+import android.os.Build
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
@@ -26,6 +27,7 @@ import androidx.compose.ui.text.font.FontFamily
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import io.github.tengigabytes.gymnotus.power.BatterySample
+import io.github.tengigabytes.gymnotus.power.DeviceMap
 import io.github.tengigabytes.gymnotus.power.MonitorType
 import io.github.tengigabytes.gymnotus.power.PowerTree
 import io.github.tengigabytes.gymnotus.power.PowerTreeBuilder
@@ -34,12 +36,13 @@ import io.github.tengigabytes.gymnotus.power.TreeInput
 import io.github.tengigabytes.gymnotus.sampler.RailRow
 import java.util.Locale
 
-fun buildTree(rails: List<RailRow>, grouping: TreeGrouping, battery: BatterySample?): PowerTree = PowerTreeBuilder.build(
+fun buildTree(rails: List<RailRow>, grouping: TreeGrouping, battery: BatterySample?, map: DeviceMap?): PowerTree = PowerTreeBuilder.build(
     rails.filter { it.info.type == MonitorType.MEASUREMENT }.map {
         TreeInput(it.info.index, it.info.name, it.reading?.powerMw)
     },
     grouping,
     battery?.onExternalPower,
+    map,
 )
 
 /** Grouped MEASUREMENT rails followed by the CONSUMER list, which is shown separately and never summed in. */
@@ -50,9 +53,10 @@ fun LazyListScope.treeView(
     battery: BatterySample?,
     grouping: TreeGrouping,
     selection: ChartSelection,
+    map: DeviceMap?,
     chart: @Composable () -> Unit,
 ) {
-    item(key = "tree-root") { TreeRoot(tree, rails, battery, selection) }
+    item(key = "tree-root") { TreeRoot(tree, rails, battery, selection, map) }
     item(key = "chart") { chart() }
     for (group in tree.groups) {
         val groupKey = groupKey(grouping, group.name)
@@ -111,7 +115,7 @@ fun LazyListScope.treeView(
 }
 
 @Composable
-private fun TreeRoot(tree: PowerTree, rails: List<RailRow>, battery: BatterySample?, selection: ChartSelection) {
+private fun TreeRoot(tree: PowerTree, rails: List<RailRow>, battery: BatterySample?, selection: ChartSelection, map: DeviceMap?) {
     val small = MaterialTheme.typography.bodySmall
     val muted = MaterialTheme.colorScheme.onSurfaceVariant
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp)) {
@@ -146,7 +150,7 @@ private fun TreeRoot(tree: PowerTree, rails: List<RailRow>, battery: BatterySamp
         val age = ageMs?.let { String.format(Locale.ROOT, "data age %.1f s", it / 1000.0) } ?: "no data yet"
         val missing = if (tree.missing > 0) " · ${tree.missing} rails without data" else ""
         Text("$age$missing", style = small, color = muted)
-        Text("Rails are grouped by name only: topology below the battery is unknown.", style = small, color = muted)
+        Text(mapLine(map), style = small, color = muted)
     }
     HorizontalDivider()
 }
@@ -219,6 +223,21 @@ private fun UnmeasuredRow(powerMw: Double?, totalMw: Double?) {
             fontWeight = FontWeight.Bold,
         )
     }
+}
+
+/** Says where the grouping comes from, and which rails have no monitor and so can only show up as unmeasured. */
+private fun mapLine(map: DeviceMap?): String {
+    if (map == null) {
+        return "No device map for ${Build.DEVICE}: sources are guessed from rail names, and how rails feed each other is unknown."
+    }
+    val bucks = map.unmonitored.filter { it.kind != "ldo" }
+    val ldos = map.unmonitored.size - bucks.size
+    val unmonitored = if (map.unmonitored.isEmpty()) {
+        ""
+    } else {
+        " Rails without a monitor: ${bucks.joinToString { it.rail }}" + if (ldos > 0) " and $ldos LDOs." else "."
+    }
+    return "Device map: ${map.description}. It names the sources; which LDO hangs off which buck is not published.$unmonitored"
 }
 
 fun railKey(index: Int) = "r:$index"

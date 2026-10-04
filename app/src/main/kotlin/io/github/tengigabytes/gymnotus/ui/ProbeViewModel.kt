@@ -3,6 +3,7 @@ package io.github.tengigabytes.gymnotus.ui
 import android.app.Application
 import android.content.Intent
 import android.net.Uri
+import android.os.Build
 import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
@@ -10,6 +11,7 @@ import io.github.tengigabytes.gymnotus.GymnotusApp
 import io.github.tengigabytes.gymnotus.adb.FastModeService
 import io.github.tengigabytes.gymnotus.adb.SelfAdb
 import io.github.tengigabytes.gymnotus.power.CsvExport
+import io.github.tengigabytes.gymnotus.power.DeviceMap
 import io.github.tengigabytes.gymnotus.sampler.ExportSnapshot
 import io.github.tengigabytes.gymnotus.sampler.HistoryPoint
 import io.github.tengigabytes.gymnotus.sampler.LogService
@@ -30,6 +32,15 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
     val state: StateFlow<SamplerState> = sampler.state
 
     val history: StateFlow<List<HistoryPoint>> = sampler.historyFlow
+
+    private val _deviceMap = MutableStateFlow<DeviceMap?>(null)
+
+    /** The bundled map for this device, or null if there is none. */
+    val deviceMap: StateFlow<DeviceMap?> = _deviceMap.asStateFlow()
+
+    init {
+        viewModelScope.launch { _deviceMap.value = withContext(Dispatchers.IO) { loadDeviceMap() } }
+    }
 
     private val _message = MutableStateFlow<String?>(null)
 
@@ -122,10 +133,27 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
         stop()
     }
 
+    private fun loadDeviceMap(): DeviceMap? {
+        val assets = getApplication<Application>().assets
+        return assets.list(DEVICE_MAPS_DIR).orEmpty().filter { it.endsWith(".json") }.firstNotNullOfOrNull { file ->
+            try {
+                DeviceMap.parse(assets.open("$DEVICE_MAPS_DIR/$file").bufferedReader().use { it.readText() })
+                    .takeIf { Build.DEVICE in it.devices }
+            } catch (e: Exception) {
+                // A malformed contributed map must not take the app down; it is simply not used.
+                null
+            }
+        }
+    }
+
     private fun displayName(uri: Uri): String {
         val resolver = getApplication<Application>().contentResolver
         return resolver.query(uri, arrayOf(OpenableColumns.DISPLAY_NAME), null, null, null)?.use { cursor ->
             if (cursor.moveToFirst()) cursor.getString(0) else null
         } ?: uri.lastPathSegment.orEmpty()
+    }
+
+    private companion object {
+        const val DEVICE_MAPS_DIR = "device-maps"
     }
 }

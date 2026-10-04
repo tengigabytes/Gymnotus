@@ -20,6 +20,13 @@ android {
         }
     }
 
+    // Device maps are kept outside the app module so they can be contributed without touching code.
+    sourceSets {
+        getByName("main") {
+            assets.srcDir(rootProject.file("data"))
+        }
+    }
+
     buildFeatures {
         compose = true
     }
@@ -42,4 +49,5 @@ dependencies {
     implementation(libs.conscrypt)
 
     testImplementation(libs.junit)
+    testImplementation(libs.org.json)
 }

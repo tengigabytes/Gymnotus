@@ -99,6 +99,26 @@ class PowerTreeTest {
     }
 
     @Test
+    fun deviceMapNamesTheSourcesAndTheBatteryRail() {
+        val map = DeviceMap(
+            devices = listOf("test"),
+            description = "",
+            batteryRail = "VSYS_PWR_DISP_G1",
+            sources = listOf(RailSource("main", "Main PMIC", Regex("^[SL][0-9]+M(_.*)?$"))),
+            unmonitored = emptyList(),
+        )
+        val tree = PowerTreeBuilder.build(rails + battery, TreeGrouping.SOURCE, onExternalPower = false, map = map)
+        // The map's battery rail is the root; the default one is then an ordinary rail.
+        assertEquals(85.0, tree.baseMw!!, 1e-9)
+        assertEquals(3, tree.batteryRailIndex)
+        val main = tree.groups.single { it.name == "Main PMIC" }
+        assertEquals(listOf("S4M_VDD_CPU", "S2M_VDD_CPU2", "L1M_ALIVE"), main.leaves.map { it.rail })
+        // Rails the map has no source for fall back to the name-based guess.
+        assertTrue(tree.groups.any { it.name == "S<n>S" })
+        assertTrue(tree.groups.any { it.name == "VSYS_PWR" && it.leaves.single().rail == "VSYS_PWR_VBATT" })
+    }
+
+    @Test
     fun unmeasuredMayBeNegativeAndIsNotClamped() {
         val tree = PowerTreeBuilder.build(rails + battery.copy(powerMw = 100.0), TreeGrouping.SUBSYSTEM, false)
         assertEquals(-94.0, tree.unmeasuredMw!!, 1e-9)

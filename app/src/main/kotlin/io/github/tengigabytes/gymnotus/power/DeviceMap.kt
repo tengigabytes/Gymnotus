@@ -1,0 +1,51 @@
+package io.github.tengigabytes.gymnotus.power
+
+import org.json.JSONObject
+
+/** Where a rail is measured: one PMIC, or the shunts on the system rail. */
+data class RailSource(val id: String, val name: String, val pattern: Regex)
+
+/** A rail the device has but exposes no monitor for; its power is part of whatever is left unmeasured. */
+data class UnmonitoredRail(val rail: String, val subsystem: String, val kind: String)
+
+/**
+ * Per-device facts that the PowerMonitor API does not give, taken from the device's published device tree.
+ * Files live in `data/device-maps/` so they can be contributed without touching code.
+ *
+ * It deliberately holds no parent/child links between rails: the device trees seen so far do not say which LDO
+ * hangs off which buck, and guessing that would put invented structure on screen.
+ *
+ * @property devices Build.DEVICE values this map applies to
+ * @property batteryRail rail measuring the battery's output, the root of the tree on battery power
+ */
+data class DeviceMap(
+    val devices: List<String>,
+    val description: String,
+    val batteryRail: String?,
+    val sources: List<RailSource>,
+    val unmonitored: List<UnmonitoredRail>,
+) {
+    fun sourceOf(rail: String): RailSource? = sources.firstOrNull { it.pattern.matches(rail) }
+
+    companion object {
+        /** @throws org.json.JSONException if a required field is missing or has the wrong type */
+        fun parse(json: String): DeviceMap {
+            val root = JSONObject(json)
+            val sources = root.getJSONArray("sources")
+            val unmonitored = root.optJSONArray("unmonitored")
+            return DeviceMap(
+                devices = root.getJSONArray("devices").let { array -> List(array.length()) { array.getString(it) } },
+                description = root.optString("description"),
+                batteryRail = if (root.has("batteryRail")) root.getString("batteryRail") else null,
+                sources = List(sources.length()) { i ->
+                    val source = sources.getJSONObject(i)
+                    RailSource(source.getString("id"), source.getString("name"), Regex(source.getString("railPattern")))
+                },
+                unmonitored = List(unmonitored?.length() ?: 0) { i ->
+                    val rail = unmonitored!!.getJSONObject(i)
+                    UnmonitoredRail(rail.getString("rail"), rail.getString("subsystem"), rail.getString("kind"))
+                },
+            )
+        }
+    }
+}

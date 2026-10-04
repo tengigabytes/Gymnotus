@@ -76,13 +76,18 @@ object PowerTreeBuilder {
     private val MAIN = Regex("""^S\d+M(_.*)?$""")
     private val SUB = Regex("""^S\d+S(_.*)?$""")
 
-    /** @param onExternalPower null when the power source is unknown, which is treated like external power */
-    fun build(rails: List<TreeInput>, grouping: TreeGrouping, onExternalPower: Boolean?): PowerTree {
-        val (batteryRails, loads) = rails.partition { parseRailName(it.name).rail == BATTERY_RAIL }
+    /**
+     * @param onExternalPower null when the power source is unknown, which is treated like external power
+     * @param map device facts, if a map exists for this device; without one, sources are guessed from rail names
+     * and the battery rail is assumed to be [BATTERY_RAIL]
+     */
+    fun build(rails: List<TreeInput>, grouping: TreeGrouping, onExternalPower: Boolean?, map: DeviceMap? = null): PowerTree {
+        val batteryRail = map?.batteryRail ?: BATTERY_RAIL
+        val (batteryRails, loads) = rails.partition { parseRailName(it.name).rail == batteryRail }
         val batteryMw = batteryRails.firstOrNull()?.powerMw
         val groups = loads
             .groupBy(
-                keySelector = { groupOf(parseRailName(it.name), grouping) },
+                keySelector = { groupOf(parseRailName(it.name), grouping, map) },
                 valueTransform = { input ->
                     val name = parseRailName(input.name)
                     val detail = when (grouping) {
@@ -110,9 +115,9 @@ object PowerTreeBuilder {
         )
     }
 
-    private fun groupOf(name: RailName, grouping: TreeGrouping) = when (grouping) {
+    private fun groupOf(name: RailName, grouping: TreeGrouping, map: DeviceMap?) = when (grouping) {
         TreeGrouping.SUBSYSTEM -> name.subsystem ?: UNLABELLED
-        TreeGrouping.SOURCE -> when {
+        TreeGrouping.SOURCE -> map?.sourceOf(name.rail)?.name ?: when {
             MAIN.matches(name.rail) -> "S<n>M"
             SUB.matches(name.rail) -> "S<n>S"
             name.rail.startsWith("VSYS_PWR") -> "VSYS_PWR"

@@ -68,11 +68,12 @@ fun ProbeScreen(viewModel: ProbeViewModel) {
     val state by viewModel.state.collectAsState()
     val message by viewModel.message.collectAsState()
     val history by viewModel.history.collectAsState()
+    val deviceMap by viewModel.deviceMap.collectAsState()
     val selection = remember { ChartSelection() }
     var defaultsApplied by remember { mutableStateOf(false) }
     if (!defaultsApplied && state.rails.any { it.reading?.powerMw != null }) {
         LaunchedEffect(Unit) {
-            selectDefaults(selection, buildTree(state.rails, TreeGrouping.SUBSYSTEM, state.battery))
+            selectDefaults(selection, buildTree(state.rails, TreeGrouping.SUBSYSTEM, state.battery, deviceMap))
             defaultsApplied = true
         }
     }
@@ -129,7 +130,7 @@ fun ProbeScreen(viewModel: ProbeViewModel) {
                 item { ViewModeChips(viewMode, onSelect = { viewMode = it }) }
                 val grouping = viewMode.grouping
                 if (grouping != null) {
-                    treeView(buildTree(state.rails, grouping, state.battery), state.rails, state.battery, grouping, selection) {
+                    treeView(buildTree(state.rails, grouping, state.battery, deviceMap), state.rails, state.battery, grouping, selection, deviceMap) {
                         // In standard mode a minute holds only three readings.
                         TimelineChart(history, selection, defaultWindowMs = if (state.finePermission) 60_000L else 300_000L)
                     }
