@@ -64,7 +64,7 @@ class LogService : Service() {
         val open = PendingIntent.getActivity(this, 0, Intent(this, MainActivity::class.java), PendingIntent.FLAG_IMMUTABLE)
         val stop = PendingIntent.getService(this, 0, stopIntent(this), PendingIntent.FLAG_IMMUTABLE)
         return Notification.Builder(this, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_stat_bolt)
+            .setSmallIcon(R.drawable.ic_stat_gymnotus)
             .setContentTitle(getString(R.string.notif_log_title))
             .setContentText(getString(R.string.notif_log_text))
             .setContentIntent(open)

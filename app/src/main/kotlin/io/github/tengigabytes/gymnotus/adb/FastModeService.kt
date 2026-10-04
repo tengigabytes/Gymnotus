@@ -67,7 +67,7 @@ class FastModeService : Service() {
             val manager = context.getSystemService(NotificationManager::class.java)
             manager.createNotificationChannel(NotificationChannel(CHANNEL_ID, context.getString(R.string.notif_setup_channel), NotificationManager.IMPORTANCE_HIGH))
             val builder = Notification.Builder(context, CHANNEL_ID)
-                .setSmallIcon(R.drawable.ic_stat_bolt)
+                .setSmallIcon(R.drawable.ic_stat_gymnotus)
                 .setContentTitle(context.getString(R.string.notif_setup_title))
                 .setContentText(text)
                 .setStyle(Notification.BigTextStyle().bigText(text))
