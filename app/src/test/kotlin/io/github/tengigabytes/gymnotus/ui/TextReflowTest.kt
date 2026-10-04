@@ -23,4 +23,45 @@ class TextReflowTest {
             reflow(text),
         )
     }
+
+    @Test
+    fun parsesMarkdownBlocks() {
+        val text = "# Title\n\ntext that\nwraps\n\n- one\n- two\n\n| Name | Use |\n|---|---|\n| a | b |\n| c | d |\n\nend"
+        assertEquals(
+            listOf(
+                DocBlock.Heading(1, "Title"),
+                DocBlock.Paragraph("text that wraps"),
+                DocBlock.Item("one"),
+                DocBlock.Item("two"),
+                DocBlock.Table(listOf("Name", "Use"), listOf(listOf("a", "b"), listOf("c", "d"))),
+                DocBlock.Paragraph("end"),
+            ),
+            parseDocument(text, markdown = true),
+        )
+    }
+
+    @Test
+    fun plainTextIsParagraphsOnly() {
+        assertEquals(
+            listOf(DocBlock.Paragraph("# not a heading"), DocBlock.Paragraph("- not an item")),
+            parseDocument("# not a heading\n\n- not an item", markdown = false),
+        )
+    }
+
+    @Test
+    fun parsesInlineMarkdown() {
+        assertEquals(
+            listOf(
+                InlineSpan("Bold", InlineStyle.BOLD),
+                InlineSpan(": see ", InlineStyle.PLAIN),
+                InlineSpan("Build", InlineStyle.CODE),
+                InlineSpan(", ", InlineStyle.PLAIN),
+                InlineSpan("the licence", InlineStyle.PLAIN),
+                InlineSpan(" and ", InlineStyle.PLAIN),
+                InlineSpan("https://example.org/x", InlineStyle.PLAIN),
+                InlineSpan(".", InlineStyle.PLAIN),
+            ),
+            parseInline("**Bold**: see `Build`, [the licence](LICENSE) and <https://example.org/x>."),
+        )
+    }
 }

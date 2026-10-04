@@ -160,7 +160,7 @@ fun GymnotusScreen(viewModel: ProbeViewModel) {
                             overlay = Overlay.DOCUMENT
                         },
                     )
-                    Overlay.DOCUMENT -> LegalText(remember(document) { viewModel.legalText(document) })
+                    Overlay.DOCUMENT -> LegalText(remember(document) { viewModel.legalText(document) }, markdown = document.asset.endsWith(".md"))
                     Overlay.NONE -> when (page) {
                         Page.LIVE -> LiveTab(
                             state = state,

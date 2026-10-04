@@ -6,10 +6,13 @@ import android.provider.Settings
 import androidx.annotation.StringRes
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.selection.SelectionContainer
 import androidx.compose.foundation.verticalScroll
@@ -25,6 +28,12 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.AnnotatedString
+import androidx.compose.ui.text.SpanStyle
+import androidx.compose.ui.text.buildAnnotatedString
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.text.withStyle
 import androidx.compose.ui.unit.dp
 import io.github.tengigabytes.gymnotus.R
 import io.github.tengigabytes.gymnotus.sampler.Sampler
@@ -156,15 +165,67 @@ private fun ModeNotice(finePermission: Boolean, onSetUp: () -> Unit) {
     SelectionContainer { Mono(GRANT_COMMAND) }
 }
 
-/** A bundled legal text, shown as it is. */
+/**
+ * A bundled legal text. The Markdown ones are laid out (headings, lists, tables as stacked entries, since a
+ * table of four columns does not fit a phone); the licence is plain text and shown as paragraphs.
+ */
 @Composable
-fun LegalText(text: String) {
+fun LegalText(text: String, markdown: Boolean) {
+    val blocks = remember(text, markdown) { parseDocument(text, markdown) }
     SelectionContainer {
-        // The files are hard-wrapped for a terminal; the screen is narrower, so it wraps them itself.
-        Text(
-            remember(text) { reflow(text) },
-            style = MaterialTheme.typography.bodyMedium,
-            modifier = Modifier.fillMaxSize().verticalScroll(rememberScrollState()).padding(16.dp),
-        )
+        LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
+            items(blocks) { block ->
+                when (block) {
+                    is DocBlock.Heading -> Text(
+                        inline(block.text, markdown),
+                        style = when (block.level) {
+                            1 -> MaterialTheme.typography.titleLarge
+                            2 -> MaterialTheme.typography.titleMedium
+                            else -> MaterialTheme.typography.titleSmall
+                        },
+                        modifier = Modifier.padding(top = 8.dp),
+                    )
+                    is DocBlock.Paragraph -> Text(inline(block.text, markdown), style = MaterialTheme.typography.bodyMedium)
+                    is DocBlock.Item -> Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("•", style = MaterialTheme.typography.bodyMedium)
+                        Text(inline(block.text, markdown), style = MaterialTheme.typography.bodyMedium)
+                    }
+                    is DocBlock.Table -> TableEntries(block)
+                }
+            }
+        }
+    }
+}
+
+/** One entry per row: the first cell as its title, the others below it, named by their column when there are several. */
+@Composable
+private fun TableEntries(table: DocBlock.Table) {
+    Column(verticalArrangement = Arrangement.spacedBy(10.dp)) {
+        for (row in table.rows) {
+            Column {
+                Text(inline(row.firstOrNull().orEmpty(), true), style = MaterialTheme.typography.bodyMedium, fontWeight = FontWeight.Bold)
+                for (column in 1 until row.size) {
+                    val label = if (row.size > 2) table.header.getOrNull(column)?.let { "$it: " }.orEmpty() else ""
+                    Text(
+                        inline(label + row[column], true),
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant,
+                    )
+                }
+            }
+        }
+    }
+}
+
+private fun inline(text: String, markdown: Boolean): AnnotatedString {
+    if (!markdown) return AnnotatedString(text)
+    return buildAnnotatedString {
+        for (span in parseInline(text)) {
+            when (span.style) {
+                InlineStyle.PLAIN -> append(span.text)
+                InlineStyle.BOLD -> withStyle(SpanStyle(fontWeight = FontWeight.Bold)) { append(span.text) }
+                InlineStyle.CODE -> withStyle(SpanStyle(fontFamily = FontFamily.Monospace)) { append(span.text) }
+            }
+        }
     }
 }
