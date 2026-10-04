@@ -10,7 +10,7 @@ import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.dynamicDarkColorScheme
 import androidx.compose.material3.dynamicLightColorScheme
-import io.github.tengigabytes.gymnotus.ui.ProbeScreen
+import io.github.tengigabytes.gymnotus.ui.GymnotusScreen
 import io.github.tengigabytes.gymnotus.ui.ProbeViewModel
 
 class MainActivity : ComponentActivity() {
@@ -24,7 +24,7 @@ class MainActivity : ComponentActivity() {
         setContent {
             val colors = if (isSystemInDarkTheme()) dynamicDarkColorScheme(this) else dynamicLightColorScheme(this)
             MaterialTheme(colorScheme = colors) {
-                ProbeScreen(viewModel)
+                GymnotusScreen(viewModel)
             }
         }
     }

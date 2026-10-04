@@ -2,6 +2,38 @@
 <resources>
     <string name="app_name" translatable="false">Gymnotus</string>
 
+    <!-- Pages -->
+    <string name="tab_live">Live</string>
+    <string name="tab_log">Log</string>
+    <string name="tab_details">Details</string>
+
+    <!-- Live page -->
+    <string name="hero_detail_battery">Measured rails %1$s · unmeasured %2$s</string>
+    <string name="hero_detail_external">On external power: no device total · battery rail %1$s</string>
+    <string name="hero_detail_unknown">Power source unknown: no device total · battery rail %1$s</string>
+    <string name="badge_fast">Fast · 0.5 s</string>
+    <string name="badge_standard">Standard · 20 s</string>
+    <string name="bar_unmeasured">Unmeasured</string>
+    <string name="setup_card_title">Readings refresh only every 20 s</string>
+    <string name="setup_card_body">A one-time setup on this phone makes that about 0.5 s.</string>
+    <string name="setup_card_action">Show me how</string>
+    <string name="live_hint">Tap a row to add it to the trend chart</string>
+    <string name="sankey_other">Other (%1$d)</string>
+    <string name="view_flow">Flow</string>
+    <string name="view_trend">Trend</string>
+    <string name="sankey_hint">Ribbon width is power; numbers are mW. Tap a source or a subsystem to chart it.</string>
+
+    <!-- Log page -->
+    <string name="section_log">Log to a file</string>
+    <string name="section_buffer">Recent readings</string>
+    <string name="buffer_hint">The last %1$d s of raw readings are kept in memory and can be exported at any time.</string>
+
+    <!-- Details page -->
+    <string name="section_mode">Refresh mode</string>
+    <string name="section_polling">Polling</string>
+    <string name="section_device">Device and data sources</string>
+    <string name="section_raw">Raw readings</string>
+
     <!-- Summary -->
     <string name="list_waiting">Reading the list of power monitors…</string>
     <string name="list_empty">This device reports no power monitors (getSupportedPowerMonitors returned an empty list).</string>
@@ -29,7 +61,6 @@
     <string name="slow_screen_off">Poll every %1$d s while the screen is off</string>
     <string name="view_subsystem">By subsystem</string>
     <string name="view_source">By source</string>
-    <string name="view_raw">Raw</string>
 
     <!-- Shared values -->
     <string name="no_data">no data</string>
@@ -51,9 +82,6 @@
     <string name="tree_root_battery">Battery output</string>
     <string name="tree_root_sum">Σ measured rails</string>
     <string name="tree_chart_battery">Chart the battery rail</string>
-    <string name="tree_battery_root_detail">%1$s · measured rails below sum to %2$s</string>
-    <string name="tree_external">On external power: no device total. %1$s (%2$s) counts battery discharge only.</string>
-    <string name="tree_source_unknown">Power source unknown: no device total. %1$s (%2$s) counts battery discharge only.</string>
     <string name="battery_line">BatteryManager (instant, sign as reported): %1$s × %2$s = %3$s · %4$s · plugged=%5$s</string>
     <string name="battery_none">BatteryManager: no sample yet</string>
     <string name="status_charging">charging</string>
@@ -62,8 +90,6 @@
     <string name="status_full">full</string>
     <string name="status_other">status %1$s</string>
     <string name="data_age">Data age %1$s s</string>
-    <string name="no_data_yet">No data yet</string>
-    <string name="rails_missing">%1$d rails without data</string>
     <string name="map_none">No device map for %1$s: sources are guessed from rail names, and how rails feed each other is unknown.</string>
     <string name="map_line">Device map: %1$s. It names the sources; which LDO hangs off which buck is not published.</string>
     <string name="map_unmonitored">Rails without a monitor: %1$s.</string>

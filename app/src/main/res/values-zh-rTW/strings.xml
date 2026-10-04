@@ -1,5 +1,37 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
+    <!-- Pages -->
+    <string name="tab_live">即時</string>
+    <string name="tab_log">記錄</string>
+    <string name="tab_details">詳細</string>
+
+    <!-- Live page -->
+    <string name="hero_detail_battery">實測 rail %1$s · 未量測 %2$s</string>
+    <string name="hero_detail_external">外接電源中：沒有整機總功率 · 電池 rail %1$s</string>
+    <string name="hero_detail_unknown">電源狀態不明：沒有整機總功率 · 電池 rail %1$s</string>
+    <string name="badge_fast">快速 · 0.5 秒</string>
+    <string name="badge_standard">標準 · 20 秒</string>
+    <string name="bar_unmeasured">未量測</string>
+    <string name="setup_card_title">目前每 20 秒才更新一次讀數</string>
+    <string name="setup_card_body">在手機上完成一次設定，就能縮短到約 0.5 秒。</string>
+    <string name="setup_card_action">查看設定方式</string>
+    <string name="live_hint">點任一列可加入趨勢圖</string>
+    <string name="sankey_other">其他（%1$d 項）</string>
+    <string name="view_flow">流向</string>
+    <string name="view_trend">趨勢</string>
+    <string name="sankey_hint">帶子寬度即功率，數字單位為 mW。點來源或子系統可加入趨勢圖。</string>
+
+    <!-- Log page -->
+    <string name="section_log">記錄到檔案</string>
+    <string name="section_buffer">最近的讀數</string>
+    <string name="buffer_hint">記憶體中保留最近 %1$d 秒的原始讀數，可隨時匯出。</string>
+
+    <!-- Details page -->
+    <string name="section_mode">更新模式</string>
+    <string name="section_polling">輪詢</string>
+    <string name="section_device">裝置與資料來源</string>
+    <string name="section_raw">原始讀數</string>
+
     <!-- Summary -->
     <string name="list_waiting">正在讀取電源監測清單…</string>
     <string name="list_empty">這台裝置沒有回報任何電源監測項目（getSupportedPowerMonitors 回傳空清單）。</string>
@@ -27,7 +59,6 @@
     <string name="slow_screen_off">螢幕關閉時每 %1$d 秒輪詢一次</string>
     <string name="view_subsystem">依子系統</string>
     <string name="view_source">依電源來源</string>
-    <string name="view_raw">原始讀數</string>
 
     <!-- Shared values -->
     <string name="no_data">無資料</string>
@@ -49,9 +80,6 @@
     <string name="tree_root_battery">電池輸出</string>
     <string name="tree_root_sum">實測 rail 合計</string>
     <string name="tree_chart_battery">把電池 rail 加入圖表</string>
-    <string name="tree_battery_root_detail">%1$s · 下方實測 rail 合計 %2$s</string>
-    <string name="tree_external">外接電源中：沒有整機總功率。%1$s（%2$s）只計電池放電。</string>
-    <string name="tree_source_unknown">電源狀態不明：沒有整機總功率。%1$s（%2$s）只計電池放電。</string>
     <string name="battery_line">BatteryManager（瞬時值，正負號依裝置回報）：%1$s × %2$s = %3$s · %4$s · plugged=%5$s</string>
     <string name="battery_none">BatteryManager：尚無取樣</string>
     <string name="status_charging">充電中</string>
@@ -60,8 +88,6 @@
     <string name="status_full">已充飽</string>
     <string name="status_other">狀態 %1$s</string>
     <string name="data_age">資料年齡 %1$s 秒</string>
-    <string name="no_data_yet">尚無資料</string>
-    <string name="rails_missing">%1$d 條 rail 無資料</string>
     <string name="map_none">沒有 %1$s 的機型對應表：電源來源依 rail 名稱推測，rail 之間的供電關係未知。</string>
     <string name="map_line">機型對應表：%1$s。來源名稱有依據；哪條 LDO 接在哪條 buck 之下則未公開。</string>
     <string name="map_unmonitored">沒有監測通道的 rail：%1$s。</string>

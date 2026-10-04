@@ -115,7 +115,8 @@ object PowerTreeBuilder {
         )
     }
 
-    private fun groupOf(name: RailName, grouping: TreeGrouping, map: DeviceMap?) = when (grouping) {
+    /** Name of the group a rail belongs to under [grouping]; the same names the tree's groups carry. */
+    fun groupOf(name: RailName, grouping: TreeGrouping, map: DeviceMap?) = when (grouping) {
         TreeGrouping.SUBSYSTEM -> name.subsystem ?: UNLABELLED
         TreeGrouping.SOURCE -> map?.sourceOf(name.rail)?.name ?: when {
             MAIN.matches(name.rail) -> "S<n>M"

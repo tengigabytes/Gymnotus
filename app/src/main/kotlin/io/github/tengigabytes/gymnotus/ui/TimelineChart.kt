@@ -46,6 +46,7 @@ import androidx.compose.ui.text.TextStyle
 import androidx.compose.ui.text.drawText
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.rememberTextMeasurer
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import io.github.tengigabytes.gymnotus.R
@@ -123,7 +124,7 @@ private val WINDOWS_MS = listOf(60_000L to R.string.window_1min, 300_000L to R.s
 
 /** Power of the selected series over the last minute or five, with a tap-and-drag cursor that reads out values. */
 @Composable
-fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaultWindowMs: Long) {
+fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaultWindowMs: Long, plotHeight: Dp = 180.dp) {
     val colors = chartColors()
     val density = LocalDensity.current
     var windowMs by rememberSaveable { mutableStateOf(defaultWindowMs) }
@@ -144,7 +145,7 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
 
     Column(
         Modifier
-            .padding(horizontal = 16.dp, vertical = 8.dp)
+            .padding(horizontal = 16.dp, vertical = 4.dp)
             .clip(RoundedCornerShape(12.dp))
             .background(colors.surface)
             .padding(12.dp),
@@ -172,7 +173,7 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
                 Canvas(
                     Modifier
                         .fillMaxWidth()
-                        .height(180.dp)
+                        .height(plotHeight)
                         .onSizeChanged { widthPx = it.width }
                         .pointerInput(Unit) { detectTapGestures { cursorX = if (cursorX == null) it.x else null } }
                         .pointerInput(Unit) {
@@ -180,8 +181,8 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
                         },
                 ) {
                     val topPx = 8.dp.toPx()
-                    val plotHeight = size.height - topPx - 20.dp.toPx()
-                    fun yOf(value: Double) = topPx + plotHeight * (1f - (value / scale.top).toFloat())
+                    val plotHeightPx = size.height - topPx - 20.dp.toPx()
+                    fun yOf(value: Double) = topPx + plotHeightPx * (1f - (value / scale.top).toFloat())
 
                     for (tick in scale.ticks) {
                         val y = yOf(tick)
@@ -192,7 +193,7 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
                     for ((fraction, text) in xLabels) {
                         val label = measurer.measure(text, tickStyle)
                         val x = (leftPx + plotWidth * fraction - label.size.width * fraction).coerceAtLeast(leftPx)
-                        drawText(label, topLeft = Offset(x, topPx + plotHeight + 4.dp.toPx()))
+                        drawText(label, topLeft = Offset(x, topPx + plotHeightPx + 4.dp.toPx()))
                     }
 
                     lines.forEachIndexed { s, values ->
@@ -213,7 +214,7 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
 
                     if (cursorIndex != null) {
                         val x = xOf(visible[cursorIndex].elapsedMs)
-                        drawLine(colors.axis, Offset(x, topPx), Offset(x, topPx + plotHeight), 1.dp.toPx())
+                        drawLine(colors.axis, Offset(x, topPx), Offset(x, topPx + plotHeightPx), 1.dp.toPx())
                         lines.forEachIndexed { s, values ->
                             val value = values[cursorIndex]
                             if (!value.isNaN()) {

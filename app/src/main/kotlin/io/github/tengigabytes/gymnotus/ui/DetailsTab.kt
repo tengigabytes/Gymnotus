@@ -1,0 +1,187 @@
+package io.github.tengigabytes.gymnotus.ui
+
+import android.content.ActivityNotFoundException
+import android.content.Intent
+import android.os.Build
+import android.provider.Settings
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.text.selection.SelectionContainer
+import androidx.compose.material3.FilterChip
+import androidx.compose.material3.HorizontalDivider
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.font.FontFamily
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.unit.dp
+import io.github.tengigabytes.gymnotus.R
+import io.github.tengigabytes.gymnotus.power.DeviceMap
+import io.github.tengigabytes.gymnotus.power.MonitorType
+import io.github.tengigabytes.gymnotus.power.ReadingStatus
+import io.github.tengigabytes.gymnotus.sampler.MonitorListState
+import io.github.tengigabytes.gymnotus.sampler.RailRow
+import io.github.tengigabytes.gymnotus.sampler.Sampler
+import io.github.tengigabytes.gymnotus.sampler.SamplerState
+import java.util.Locale
+
+private const val GRANT_COMMAND =
+    "adb shell pm grant io.github.tengigabytes.gymnotus android.permission.ACCESS_FINE_POWER_MONITORS"
+
+/** Everything needed to judge or tune the measurement itself: mode, polling, sources, and the raw readings. */
+@Composable
+fun DetailsTab(
+    state: SamplerState,
+    deviceMap: DeviceMap?,
+    onInterval: (Int) -> Unit,
+    onReset: () -> Unit,
+    onSetUp: () -> Unit,
+    onRetry: () -> Unit,
+) {
+    LazyColumn(Modifier.fillMaxSize()) {
+        item(key = "device") {
+            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                SectionTitle(stringResource(R.string.section_device))
+                Mono("${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE}) · API ${Build.VERSION.SDK_INT}")
+            }
+        }
+        if (state.listState != MonitorListState.READY) {
+            item(key = "status") { ListStatus(state, onRetry) }
+            return@LazyColumn
+        }
+        item(key = "sources") {
+            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                val measurement = state.rails.count { it.info.type == MonitorType.MEASUREMENT }
+                val consumer = state.rails.count { it.info.type == MonitorType.CONSUMER }
+                Mono(stringResource(R.string.summary_monitors, state.rails.size, measurement, consumer))
+                Mono(mapLine(deviceMap))
+                Mono(batteryLine(state.battery))
+            }
+        }
+        item(key = "mode") {
+            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                SectionTitle(stringResource(R.string.section_mode))
+                ModeNotice(state.finePermission, onSetUp)
+            }
+        }
+        item(key = "polling") {
+            Column(Modifier.padding(horizontal = 16.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
+                SectionTitle(stringResource(R.string.section_polling))
+                // One log has one interval and one run of poll numbers, so these are locked while it is open.
+                Row(horizontalArrangement = Arrangement.spacedBy(8.dp), verticalAlignment = Alignment.CenterVertically) {
+                    for (ms in Sampler.INTERVAL_CHOICES_MS) {
+                        FilterChip(
+                            selected = state.intervalMs == ms,
+                            enabled = state.log == null,
+                            onClick = { onInterval(ms) },
+                            label = { Text(stringResource(R.string.interval_ms, ms)) },
+                        )
+                    }
+                }
+                OutlinedButton(onClick = onReset, enabled = state.log == null) { Text(stringResource(R.string.reset)) }
+                Mono(stringResource(R.string.summary_polls, state.polls, state.pollErrors, minMedMax(state.callLatency)))
+                state.lastPollError?.let { Mono(stringResource(R.string.last_error, it), error = true) }
+                Mono(stringResource(R.string.overhead_notice))
+            }
+        }
+        item(key = "raw-title") {
+            Column(Modifier.padding(horizontal = 16.dp)) { SectionTitle(stringResource(R.string.section_raw)) }
+        }
+        // UNKNOWN first: a type this build does not know about is itself a finding.
+        for (type in listOf(MonitorType.UNKNOWN, MonitorType.MEASUREMENT, MonitorType.CONSUMER)) {
+            railSection(type, state.rails.filter { it.info.type == type })
+        }
+    }
+}
+
+/** Which of the two refresh limits applies, and how to get the faster one. */
+@Composable
+private fun ModeNotice(finePermission: Boolean, onSetUp: () -> Unit) {
+    if (finePermission) {
+        Mono(stringResource(R.string.mode_fast))
+        return
+    }
+    val context = LocalContext.current
+    Text(stringResource(R.string.mode_standard), style = MaterialTheme.typography.bodyMedium)
+    Text(stringResource(R.string.setup_steps), style = MaterialTheme.typography.bodyMedium)
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(onClick = onSetUp) { Text(stringResource(R.string.setup_button)) }
+        OutlinedButton(
+            onClick = {
+                try {
+                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS))
+                } catch (e: ActivityNotFoundException) {
+                    // Developer options are hidden until enabled in About phone; nothing to open yet.
+                }
+            },
+        ) { Text(stringResource(R.string.developer_options)) }
+    }
+    Mono(stringResource(R.string.setup_computer))
+    SelectionContainer { Mono(GRANT_COMMAND) }
+}
+
+private fun LazyListScope.railSection(type: MonitorType, rows: List<RailRow>) {
+    if (rows.isEmpty()) return
+    item(key = "header-$type") {
+        Text(
+            // The type is the API's own constant name, kept as it is.
+            text = stringResource(R.string.raw_section, type.name, rows.size),
+            style = MaterialTheme.typography.labelLarge,
+            modifier = Modifier.padding(start = 16.dp, end = 16.dp, top = 8.dp, bottom = 4.dp),
+        )
+    }
+    items(rows, key = { it.info.index }) { RailItem(it) }
+}
+
+@Composable
+private fun RailItem(row: RailRow) {
+    val reading = row.reading
+    val stats = row.stats
+    Column(Modifier.fillMaxWidth().padding(horizontal = 16.dp, vertical = 6.dp)) {
+        Row(Modifier.fillMaxWidth(), horizontalArrangement = Arrangement.SpaceBetween) {
+            Text(row.info.name, fontFamily = FontFamily.Monospace, fontWeight = FontWeight.Bold)
+            Text(
+                text = when {
+                    reading == null -> "—"
+                    reading.status == ReadingStatus.UNAVAILABLE -> stringResource(R.string.no_data)
+                    // FIRST or RESET: no power yet; the status name is the CSV's own vocabulary.
+                    reading.powerMw == null -> reading.status.name
+                    reading.status == ReadingStatus.STALE -> stringResource(R.string.raw_stale, twoDecimals(reading.powerMw))
+                    else -> stringResource(R.string.power_mw, twoDecimals(reading.powerMw))
+                },
+                fontFamily = FontFamily.Monospace,
+                color = if (reading?.status == ReadingStatus.OK) {
+                    MaterialTheme.colorScheme.onSurface
+                } else {
+                    MaterialTheme.colorScheme.onSurfaceVariant
+                },
+            )
+        }
+        if (reading != null) {
+            val energy = reading.energyUws?.let { stringResource(R.string.raw_energy_uj, String.format(Locale.ROOT, "%,d", it)) }
+                ?: stringResource(R.string.raw_energy_unavailable)
+            Mono(stringResource(R.string.raw_reading, energy, String.format(Locale.ROOT, "%,d", reading.timestampMs), row.ageMs ?: 0L))
+        }
+        Mono(stringResource(R.string.raw_intervals, stats.updateIntervals.count, minMedMax(stats.updateIntervals)))
+        Mono(stringResource(R.string.raw_counts, stats.repeats, stats.polls, percent(stats.repeats, stats.polls), stats.unavailable, stats.resets))
+        if (stats.staleEnergyChanges > 0) Mono(stringResource(R.string.raw_stale_energy, stats.staleEnergyChanges), error = true)
+    }
+    HorizontalDivider()
+}
+
+private fun twoDecimals(value: Double) = String.format(Locale.ROOT, "%.2f", value)
+
+private fun percent(part: Long, total: Long) =
+    if (total == 0L) "—" else String.format(Locale.ROOT, "%.1f%%", 100.0 * part / total)
