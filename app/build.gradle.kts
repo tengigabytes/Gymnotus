@@ -12,7 +12,12 @@ android {
         minSdk = libs.versions.minSdk.get().toInt()
         targetSdk = libs.versions.targetSdk.get().toInt()
         versionCode = 1
-        versionName = "0.0.1-phase0"
+        versionName = "0.1.0"
+        // Devices with ODPM rails (Pixel 6 and later) are all arm64; the other ABIs would only carry unused
+        // copies of the TLS libraries.
+        ndk {
+            abiFilters += "arm64-v8a"
+        }
     }
 
     buildFeatures {

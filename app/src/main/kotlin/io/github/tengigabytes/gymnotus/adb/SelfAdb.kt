@@ -85,6 +85,7 @@ private class ConnectionManager(context: Context) : AbsAdbConnectionManager() {
 private const val CONNECT_TIMEOUT_MS = 10_000L
 private const val DISCOVERY_TIMEOUT_MS = 8_000L
 private const val LOCAL_NETWORK_PERMISSION_SDK = 37
+private const val SUCCESS = "Fast mode is set up. Wireless debugging is no longer needed and can be turned off."
 
 // adbd listens on every interface; loopback keeps the whole exchange on the device.
 private const val LOOPBACK = "127.0.0.1"
@@ -140,13 +141,13 @@ object SelfAdb {
                 }
             }
             if (isGranted(context, permission)) {
-                GrantResult(true, "Fast mode is set up.")
+                GrantResult(true, SUCCESS)
             } else {
                 GrantResult(false, "pm grant did not take effect: ${output.trim()}")
             }
         } catch (e: Exception) {
             // What counts is whether the permission is held, not how the connection ended.
-            if (isGranted(context, permission)) GrantResult(true, "Fast mode is set up.") else GrantResult(false, "Failed while $step: $e")
+            if (isGranted(context, permission)) GrantResult(true, SUCCESS) else GrantResult(false, "Failed while $step: $e")
         }
     }
 
