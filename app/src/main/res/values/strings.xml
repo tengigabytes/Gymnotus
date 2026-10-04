@@ -45,7 +45,7 @@
     <string name="sankey_hint">Ribbon width is power; numbers are %1$s. Tap a node to see the rails behind it.</string>
     <string name="check_ok">Check passed: sources %1$s = subsystems %2$s = rails %3$s %4$s</string>
     <string name="check_bad">Check FAILED: sources %1$s, subsystems %2$s, rails %3$s %4$s</string>
-    <string name="node_detail_sum">Sum of %1$d rails</string>
+    <string name="node_detail_sum">Rails summed: %1$d</string>
     <string name="chart_add">Add to trend chart</string>
     <string name="chart_remove">Remove from trend chart</string>
     <string name="close">Close</string>
@@ -102,7 +102,7 @@
     <string name="list_waiting">Reading the list of power monitors…</string>
     <string name="list_empty">This device reports no power monitors (getSupportedPowerMonitors returned an empty list).</string>
     <string name="retry">Retry</string>
-    <string name="summary_monitors">%1$d monitors: %2$d measured rails, %3$d modelled consumers</string>
+    <string name="summary_monitors">Monitors: %1$d (measured rails: %2$d, modelled consumers: %3$d)</string>
     <string name="last_error">Last error: %1$s</string>
     <string name="mode_fast">Fast mode: readings refresh about every 0.5 s.</string>
     <string name="mode_standard">Standard mode: the system refreshes readings every 20 s. A one-time setup makes that about 0.5 s:</string>
@@ -120,7 +120,7 @@
     <string name="start_log">Start log</string>
     <string name="stop_log">Stop log</string>
     <string name="log_hint">Records every poll to a CSV file, also in the background.</string>
-    <string name="log_status">%1$s · %2$d polls · %3$s</string>
+    <string name="log_status">%1$s · polls: %2$d · %3$s</string>
     <string name="slow_screen_off">Poll every %1$d s while the screen is off</string>
     <string name="view_subsystem">By subsystem</string>
     <string name="view_source">By source</string>
@@ -148,7 +148,7 @@
     <string name="map_line">Device map: %1$s. It names the sources; which LDO hangs off which buck is not published.</string>
     <string name="map_unmonitored">Rails without a monitor: %1$s.</string>
     <string name="map_unmonitored_ldos">Rails without a monitor: %1$s and %2$d LDOs.</string>
-    <string name="group_missing">%1$d without data</string>
+    <string name="group_missing">No data: %1$d</string>
     <string name="unmeasured">Unmeasured · battery rail − measured rails</string>
     <string name="consumer_header">Modelled consumers (%1$d) · overlap the rails above</string>
     <string name="battery_series">Battery rail</string>
@@ -166,9 +166,9 @@
 
     <!-- Messages -->
     <string name="msg_nothing_to_export">Nothing to export yet</string>
-    <string name="msg_exported">Exported %1$d polls × %2$d monitors</string>
+    <string name="msg_exported">Exported polls: %1$d, monitors: %2$d</string>
     <string name="msg_export_failed">Export failed: %1$s</string>
-    <string name="msg_log_closed">Log closed after %1$d polls</string>
+    <string name="msg_log_closed">Log closed. Polls: %1$d</string>
     <string name="msg_log_write_failed">Log write failed: %1$s</string>
     <string name="msg_setup_needs_notifications">Fast mode setup needs notifications: the pairing code is typed into one.</string>
     <string name="msg_setup_posted">Setup notification posted. Follow the steps above.</string>
@@ -178,7 +178,7 @@
     <string name="adb_no_pairing_port">Pairing port not found. Reply with three numbers: code, the port in the pairing dialog, the port on the Wireless debugging screen.</string>
     <string name="adb_pair_refused">Pairing was refused. Check the code and try again.</string>
     <string name="adb_no_connect_port">Paired, but the connect port was not found. Pair again and reply with three numbers: code, pairing port, Wireless debugging port.</string>
-    <string name="adb_connect_failed">Paired, but connecting on port %1$d failed.</string>
+    <string name="adb_connect_failed">Paired, but connecting failed (port %1$d).</string>
     <string name="adb_success">Fast mode is set up. Wireless debugging is no longer needed and can be turned off.</string>
     <string name="adb_grant_no_effect">pm grant did not take effect: %1$s</string>
     <string name="adb_failed">Setup failed (%1$s): %2$s</string>

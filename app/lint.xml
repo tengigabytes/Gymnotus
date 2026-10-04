@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8"?>
+<lint>
+    <!-- Deliberate: devices with ODPM rails are all arm64 (see abiFilters in build.gradle.kts). -->
+    <issue id="ChromeOsAbiSupport" severity="ignore" />
+
+    <!--
+        In libadb-android, not in this code. adbd presents a self-signed certificate, so an ADB client cannot
+        check a chain; the peer is authenticated by the pairing code and the paired key instead. The app only
+        ever connects to the phone's own adbd over loopback (adb/SelfAdb.kt).
+    -->
+    <issue id="TrustAllX509TrustManager">
+        <ignore regexp="libadb-android" />
+    </issue>
+</lint>

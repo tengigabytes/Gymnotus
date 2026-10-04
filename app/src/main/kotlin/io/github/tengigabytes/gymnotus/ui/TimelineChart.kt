@@ -27,6 +27,7 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableIntStateOf
+import androidx.compose.runtime.mutableLongStateOf
 import androidx.compose.runtime.mutableStateListOf
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -137,7 +138,7 @@ fun TimelineChart(history: List<HistoryPoint>, selection: ChartSelection, defaul
     val colors = chartColors()
     val density = LocalDensity.current
     val unit = LocalPowerUnit.current
-    var windowMs by rememberSaveable { mutableStateOf(defaultWindowMs) }
+    var windowMs by rememberSaveable { mutableLongStateOf(defaultWindowMs) }
     var cursorX by remember { mutableStateOf<Float?>(null) }
     var widthPx by remember { mutableIntStateOf(0) }
 

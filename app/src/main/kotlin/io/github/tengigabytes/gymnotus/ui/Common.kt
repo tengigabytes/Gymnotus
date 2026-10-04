@@ -23,7 +23,7 @@ import io.github.tengigabytes.gymnotus.sampler.SamplerState
 
 /** Small monospaced line for diagnostics and technical values. */
 @Composable
-fun Mono(text: String, error: Boolean = false, modifier: Modifier = Modifier) {
+fun Mono(text: String, modifier: Modifier = Modifier, error: Boolean = false) {
     Text(
         text = text,
         modifier = modifier,
