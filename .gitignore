@@ -1,0 +1,29 @@
+# Gradle / Android build outputs
+.gradle/
+.kotlin/
+build/
+**/build/
+captures/
+.externalNativeBuild/
+.cxx/
+*.apk
+*.aab
+
+# Local configuration
+local.properties
+.idea/
+*.iml
+.DS_Store
+Thumbs.db
+
+# Signing material — never commit
+*.jks
+*.keystore
+keystore.properties
+/signing/
+
+# Claude Code personal settings
+.claude/settings.local.json
+
+# Git Bash crash dumps (msys) left in the working directory
+*.stackdump

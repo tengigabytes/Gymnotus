@@ -1,0 +1,56 @@
+# Gymnotus
+
+Android ODPM power rail monitor：在手機上（免 root、免接電腦）即時顯示各電源軌（power rails）的功耗。
+
+目前狀態：**Phase 0 驗證原型**。只有一個畫面，用來確認 Android 15 的 PowerMonitor API
+在實機上的行為（有哪些 rail、更新粒度、是否需要權限）。
+
+## 需求
+
+- 裝置：Android 15（API 35）以上。預期在 Pixel 6 以後機型（Tensor）才有 ODPM rail；
+  其他裝置 API 會回傳空清單，App 會顯示「no power monitors」。
+- 建置：JDK 17 以上、Android SDK Platform 37。
+
+## 建置與安裝
+
+```powershell
+.\gradlew.bat assembleDebug
+adb install -r app\build\outputs\apk\debug\app-debug.apk
+```
+
+或手機以 USB 偵錯連線後直接 `.\gradlew.bat installDebug`。
+
+## Phase 0 畫面說明
+
+- 上方：裝置資訊、monitor 數量、輪詢次數／錯誤數、API 呼叫延遲（min/med/max）。
+- 輪詢間隔：100 / 250 / 500 / 1000 ms。切換間隔或按 Reset 會清空統計與匯出緩衝區。
+- 每條 rail：
+  - 功率（mW）＝ ΔE / Δt，ΔE、Δt 都取自該 rail 自己的讀數；`(stale)` 表示時間戳記未更新、沿用前一筆。
+  - `E`：原始累積能量（µJ）；`t`：該 rail 的時間戳記（elapsedRealtime）；`age`：收到回呼時讀數的年齡。
+  - `Δt n / min/med/max`：實際更新間隔（相鄰兩筆不同時間戳記之差）的分布。
+  - `repeat`：時間戳記與前一筆相同（未更新）的次數與比例。
+- Export CSV：匯出最近 5 分鐘的原始讀數（每次輪詢另附 BatteryManager 的電流、電壓、充電狀態與電量計數器）。檔案開頭以 `#` 起始的行是中繼資料
+  （裝置、rail 清單與類型、各 rail 統計），其後為長格式表格（每次輪詢每條 rail 一列）。
+  缺值一律留空，不以 0 代替。pandas 可用 `pd.read_csv(path, comment="#")` 讀取。
+
+App 只在畫面可見時輪詢，並在前景時保持螢幕常亮；資料只在本機處理。
+
+## 更新粒度與選用權限
+
+不需任何權限即可使用，但系統（PowerStatsService）此時最多每 20 秒才更新一次讀數。
+授予 `ACCESS_FINE_POWER_MONITORS` 後上限為 250 ms（Pixel 10 Pro／Android 17 實測約 500 ms 更新一次）。
+這個權限無法在 App 內請求，只能用 adb 授權一次：
+
+```powershell
+adb shell pm grant io.github.tengigabytes.gymnotus android.permission.ACCESS_FINE_POWER_MONITORS
+```
+
+畫面上方會顯示目前是哪一種模式。系統會對回傳的能量值加入小幅隨機雜訊，兩種模式皆然。
+
+## 命名由來
+
+*Gymnotus* 是新熱帶區的弱電魚屬，以感測自身電場的擾動來感知環境（electrolocation），
+象徵本工具以低侵入方式觀察電流在裝置中的分布。林奈於 1766 年最初也將電鰻命名為
+*Gymnotus electricus*，後於 1864 年才移至 *Electrophorus* 屬。
+
+字源上 *Gymnotus* 意為「裸背」（指沒有背鰭），與電無關。
