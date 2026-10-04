@@ -5,6 +5,7 @@ import android.net.Uri
 import android.os.Build
 import android.os.PowerMonitor
 import android.os.SystemClock
+import android.view.Display
 import io.github.tengigabytes.gymnotus.power.BatteryReader
 import io.github.tengigabytes.gymnotus.power.BatterySample
 import io.github.tengigabytes.gymnotus.power.ContextReader
@@ -27,7 +28,7 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.SupervisorJob
 import kotlinx.coroutines.TimeoutCancellationException
-import kotlinx.coroutines.delay
+import kotlinx.coroutines.channels.Channel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -35,6 +36,7 @@ import kotlinx.coroutines.flow.update
 import kotlinx.coroutines.isActive
 import kotlinx.coroutines.launch
 import kotlinx.coroutines.withTimeout
+import kotlinx.coroutines.withTimeoutOrNull
 
 /** @property ageMs elapsedRealtime at the result callback minus the rail's own timestamp */
 data class RailRow(
@@ -65,6 +67,7 @@ data class SamplerState(
     val lastPollError: String? = null,
     val callLatency: IntervalSummary = IntervalSummary(0, null, null, null, null),
     val bufferSpanMs: Long = 0,
+    val slowWhenScreenOff: Boolean = true,
     val log: LogStatus? = null,
 )
 
@@ -108,7 +111,11 @@ class Sampler(private val context: Context) {
     // Bumped by reset(); a poll that was in flight across a reset is discarded.
     private var generation = 0
 
+    private var slowWhenScreenOff = true
+    private var lastScreenState: Int? = null
+
     private val holders = mutableSetOf<Holder>()
+    private val wake = Channel<Unit>(Channel.CONFLATED)
     private var pollJob: Job? = null
     private var log: LogSession? = null
 
@@ -118,7 +125,11 @@ class Sampler(private val context: Context) {
 
     fun acquire(holder: Holder) {
         holders += holder
-        if (pollJob?.isActive == true) return
+        if (pollJob?.isActive == true) {
+            // The loop may be in a long screen-off wait; the screen coming back should not have to sit that out.
+            wake.trySend(Unit)
+            return
+        }
         pollJob = scope.launch {
             if (_state.value.listState != MonitorListState.READY && !loadMonitors()) return@launch
             // The gap since the last poll before a pause must not show up as one long update interval.
@@ -126,12 +137,34 @@ class Sampler(private val context: Context) {
             var next = SystemClock.elapsedRealtime()
             while (isActive) {
                 pollOnce()
-                next += intervalMs
+                next += effectiveIntervalMs()
                 val now = SystemClock.elapsedRealtime()
                 if (next < now) next = now
-                delay(next - now)
+                if (withTimeoutOrNull(next - now) { wake.receive() } != null) next = SystemClock.elapsedRealtime()
             }
         }
+    }
+
+    /** Applies from the next poll on; allowed during a log, where each row carries the interval in effect. */
+    fun setSlowWhenScreenOff(enabled: Boolean) {
+        slowWhenScreenOff = enabled
+        _state.update { it.copy(slowWhenScreenOff = enabled) }
+    }
+
+    /** Call after the fine permission may have been granted: switches the default interval to the fast one. */
+    fun onFinePermissionChanged() {
+        val fine = source.hasFinePermission
+        _state.update { it.copy(finePermission = fine) }
+        if (fine && intervalMs == COARSE_INTERVAL_MS) setInterval(FINE_INTERVAL_MS)
+    }
+
+    /**
+     * With the screen off and this app not showing, every poll is a wake-up that adds to the standby power being
+     * measured, so the interval is stretched. Rail energy is cumulative: only time resolution is lost.
+     */
+    private fun effectiveIntervalMs(): Int {
+        val screenOff = lastScreenState != null && lastScreenState != Display.STATE_ON
+        return if (slowWhenScreenOff && screenOff && Holder.UI !in holders) maxOf(intervalMs, SCREEN_OFF_INTERVAL_MS) else intervalMs
     }
 
     fun release(holder: Holder) {
@@ -141,7 +174,11 @@ class Sampler(private val context: Context) {
 
     fun retry() {
         stopPolling()
-        _state.value = SamplerState(intervalMs = intervalMs, finePermission = source.hasFinePermission)
+        _state.value = SamplerState(
+            intervalMs = intervalMs,
+            finePermission = source.hasFinePermission,
+            slowWhenScreenOff = slowWhenScreenOff,
+        )
         if (holders.isNotEmpty()) acquire(holders.first())
     }
 
@@ -240,11 +277,12 @@ class Sampler(private val context: Context) {
 
     private suspend fun pollOnce() {
         val pollGeneration = generation
-        val pollInterval = intervalMs
         val requestMs = SystemClock.elapsedRealtime()
         val wallMs = System.currentTimeMillis()
         val battery = batteryReader.sample()
         val deviceContext = contextReader.sample(appVisible = Holder.UI in holders)
+        lastScreenState = deviceContext.screenState
+        val pollInterval = effectiveIntervalMs()
         var readings: List<RailReading> = emptyList()
         var responseMs = requestMs
         var error: String? = null
@@ -304,6 +342,7 @@ class Sampler(private val context: Context) {
     companion object {
         const val FINE_INTERVAL_MS = 250
         const val COARSE_INTERVAL_MS = 1000
+        const val SCREEN_OFF_INTERVAL_MS = 5000
         val INTERVAL_CHOICES_MS = listOf(100, 250, 500, 1000)
 
         // Long enough for the battery charge counter to move by many of its steps.

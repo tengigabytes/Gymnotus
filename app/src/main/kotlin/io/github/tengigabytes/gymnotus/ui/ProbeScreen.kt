@@ -3,9 +3,13 @@
 package io.github.tengigabytes.gymnotus.ui
 
 import android.Manifest
+import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
+import android.content.Intent
 import android.content.pm.PackageManager
 import android.os.Build
 import android.os.SystemClock
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.layout.Arrangement
@@ -50,6 +54,10 @@ import io.github.tengigabytes.gymnotus.sampler.Sampler
 import io.github.tengigabytes.gymnotus.sampler.SamplerState
 import java.util.Locale
 
+// ACCESS_LOCAL_NETWORK is new in Android 17 (API 37); older releases ignore the request and need no such permission.
+@SuppressLint("InlinedApi")
+private val SETUP_PERMISSIONS = arrayOf(Manifest.permission.POST_NOTIFICATIONS, Manifest.permission.ACCESS_LOCAL_NETWORK)
+
 private const val GRANT_COMMAND =
     "adb shell pm grant io.github.tengigabytes.gymnotus android.permission.ACCESS_FINE_POWER_MONITORS"
 
@@ -70,9 +78,22 @@ fun ProbeScreen(viewModel: ProbeViewModel) {
         logLauncher.launch(viewModel.suggestedLogName())
     }
 
+    val setupPermissionsLauncher = rememberLauncherForActivityResult(ActivityResultContracts.RequestMultiplePermissions()) { results ->
+        viewModel.setUpFastMode(notificationsAllowed = results[Manifest.permission.POST_NOTIFICATIONS] == true)
+    }
+
     Scaffold(topBar = { TopAppBar(title = { Text("Gymnotus") }) }) { padding ->
         LazyColumn(modifier = Modifier.fillMaxSize(), contentPadding = padding) {
-            item { Summary(state, onRetry = viewModel::retry) }
+            item {
+                Summary(
+                    state,
+                    onRetry = viewModel::retry,
+                    onSetUp = {
+                        // Asked here, inside the app: a permission prompt over Settings would close the pairing dialog.
+                        setupPermissionsLauncher.launch(SETUP_PERMISSIONS)
+                    },
+                )
+            }
             if (state.listState == MonitorListState.READY) {
                 item {
                     Controls(
@@ -91,6 +112,7 @@ fun ProbeScreen(viewModel: ProbeViewModel) {
                             }
                         },
                         onStopLog = viewModel::stopLog,
+                        onSlowWhenScreenOff = viewModel::setSlowWhenScreenOff,
                     )
                 }
                 item { ViewModeChips(viewMode, onSelect = { viewMode = it }) }
@@ -109,7 +131,7 @@ fun ProbeScreen(viewModel: ProbeViewModel) {
 }
 
 @Composable
-private fun Summary(state: SamplerState, onRetry: () -> Unit) {
+private fun Summary(state: SamplerState, onRetry: () -> Unit, onSetUp: () -> Unit) {
     Column(Modifier.padding(horizontal = 16.dp, vertical = 8.dp), verticalArrangement = Arrangement.spacedBy(2.dp)) {
         Mono("${Build.MANUFACTURER} ${Build.MODEL} (${Build.DEVICE}) · API ${Build.VERSION.SDK_INT}")
         when (state.listState) {
@@ -128,7 +150,7 @@ private fun Summary(state: SamplerState, onRetry: () -> Unit) {
                 Mono("monitors ${state.rails.size}: MEASUREMENT $measurement, CONSUMER $consumer")
                 Mono("polls ${state.polls} · errors ${state.pollErrors} · call latency ${state.callLatency.minMedMax()}")
                 state.lastPollError?.let { Mono("last error: $it", error = true) }
-                ModeNotice(state.finePermission)
+                ModeNotice(state.finePermission, onSetUp)
                 Mono("Gymnotus adds load itself: its polling and screen updates show up in the CPU and display rails.")
             }
         }
@@ -137,12 +159,27 @@ private fun Summary(state: SamplerState, onRetry: () -> Unit) {
 
 /** Which of the two refresh limits applies, and how to get the faster one. */
 @Composable
-private fun ModeNotice(finePermission: Boolean) {
+private fun ModeNotice(finePermission: Boolean, onSetUp: () -> Unit) {
     if (finePermission) {
         Mono("Fast mode: readings refresh about every 0.5 s (fine permission granted).")
         return
     }
-    Mono("Standard mode: the system refreshes readings every 20 s. For about 0.5 s, grant once from a computer, then restart the app:")
+    val context = LocalContext.current
+    Mono("Standard mode: the system refreshes readings every 20 s. A one-time setup makes that about 0.5 s:")
+    Mono("1. Connect to Wi-Fi. 2. Tap Set up fast mode and allow notifications and nearby devices. 3. In Developer options, turn on Wireless debugging and tap \"Pair device with pairing code\". 4. Pull down the notifications and type the code into the Gymnotus one.")
+    Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+        OutlinedButton(onClick = onSetUp) { Text("Set up fast mode") }
+        OutlinedButton(
+            onClick = {
+                try {
+                    context.startActivity(Intent(Settings.ACTION_APPLICATION_DEVELOPMENT_SETTINGS))
+                } catch (e: ActivityNotFoundException) {
+                    // Developer options are hidden until enabled in About phone; nothing to open yet.
+                }
+            },
+        ) { Text("Developer options") }
+    }
+    Mono("Or from a computer:")
     SelectionContainer { Mono(GRANT_COMMAND) }
 }
 
@@ -155,6 +192,7 @@ private fun Controls(
     onExport: () -> Unit,
     onStartLog: () -> Unit,
     onStopLog: () -> Unit,
+    onSlowWhenScreenOff: (Boolean) -> Unit,
 ) {
     val log = state.log
     Column(Modifier.padding(horizontal = 16.dp)) {
@@ -183,6 +221,11 @@ private fun Controls(
                 LogLine(log)
             }
         }
+        FilterChip(
+            selected = state.slowWhenScreenOff,
+            onClick = { onSlowWhenScreenOff(!state.slowWhenScreenOff) },
+            label = { Text("Poll every ${Sampler.SCREEN_OFF_INTERVAL_MS / 1000} s while the screen is off") },
+        )
         message?.let { Mono(it) }
     }
 }

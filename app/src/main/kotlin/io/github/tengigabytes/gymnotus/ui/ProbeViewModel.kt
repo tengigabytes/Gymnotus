@@ -7,6 +7,8 @@ import android.provider.OpenableColumns
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.viewModelScope
 import io.github.tengigabytes.gymnotus.GymnotusApp
+import io.github.tengigabytes.gymnotus.adb.FastModeService
+import io.github.tengigabytes.gymnotus.adb.SelfAdb
 import io.github.tengigabytes.gymnotus.power.CsvExport
 import io.github.tengigabytes.gymnotus.sampler.ExportSnapshot
 import io.github.tengigabytes.gymnotus.sampler.LogService
@@ -94,6 +96,23 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
         val polls = state.value.log?.polls
         app.startService(LogService.stopIntent(app))
         _message.value = polls?.let { "Log closed after $it polls" }
+    }
+
+    fun setSlowWhenScreenOff(enabled: Boolean) = sampler.setSlowWhenScreenOff(enabled)
+
+    /** Shows the notification that takes the wireless-debugging pairing code; the rest happens in FastModeService. */
+    fun setUpFastMode(notificationsAllowed: Boolean) {
+        if (!notificationsAllowed) {
+            _message.value = "Fast mode setup needs notifications: the pairing code is typed into one."
+            return
+        }
+        FastModeService.showPrompt(getApplication())
+        _message.value = if (SelfAdb.canDiscover(getApplication())) {
+            "Setup notification posted. Follow the steps above."
+        } else {
+            "Setup notification posted. Without local network access the ports cannot be found automatically: " +
+                "reply with three numbers (code, pairing port, Wireless debugging port)."
+        }
     }
 
     override fun onCleared() {

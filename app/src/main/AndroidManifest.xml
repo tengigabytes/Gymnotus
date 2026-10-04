@@ -5,12 +5,21 @@
     <!--
         The PowerMonitor API works without any permission, but PowerStatsService then refreshes readings at most
         every 20 s. With this permission the limit is 250 ms. Its protection level includes "development", so it
-        cannot be requested at runtime but can be granted once over adb:
+        cannot be requested at runtime but can be granted once over adb, from a computer:
         adb shell pm grant io.github.tengigabytes.gymnotus android.permission.ACCESS_FINE_POWER_MONITORS
+        or by the app itself acting as an ADB client of the phone's own wireless debugging (adb/SelfAdb.kt).
+        That client talks to adbd over a loopback socket, which is what the INTERNET permission (merged in from
+        libadb-android) is used for; the app sends nothing off the device.
     -->
     <uses-permission
         android:name="android.permission.ACCESS_FINE_POWER_MONITORS"
         tools:ignore="ProtectedPermissions" />
+
+    <!--
+        Fast mode setup finds the wireless-debugging ports by mDNS. Without this permission Android 17 answers a
+        discovery request by opening its own service picker, which closes the pairing dialog and so cancels pairing.
+    -->
+    <uses-permission android:name="android.permission.ACCESS_LOCAL_NETWORK" />
 
     <!-- Logging while the app is not on screen. -->
     <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
@@ -32,6 +41,11 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <!-- Short-lived: started by the reply to the pairing-code notification, pairs and grants, then stops. -->
+        <service
+            android:name=".adb.FastModeService"
+            android:exported="false" />
 
         <service
             android:name=".sampler.LogService"

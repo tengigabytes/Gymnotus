@@ -49,7 +49,7 @@ class PowerMonitorSource(private val context: Context) {
 }
 
 // Not in the public SDK (signature|privileged|development).
-private const val FINE_PERMISSION = "android.permission.ACCESS_FINE_POWER_MONITORS"
+const val FINE_PERMISSION = "android.permission.ACCESS_FINE_POWER_MONITORS"
 
 fun PowerMonitor.toInfo(index: Int) = MonitorInfo(
     index = index,

@@ -33,13 +33,22 @@ adb install -r app\build\outputs\apk\debug\app-debug.apk
   （裝置、rail 清單與類型、各 rail 統計），其後為長格式表格（每次輪詢每條 rail 一列）。
   缺值一律留空，不以 0 代替。pandas 可用 `pd.read_csv(path, comment="#")` 讀取。
 
-App 只在畫面可見時輪詢，並在前景時保持螢幕常亮；資料只在本機處理。
+- Start log：選擇存檔位置後，每次輪詢即時寫入 CSV；切到其他 App 或關螢幕都會繼續，通知列可停止。
+  LOG 不使用 wake lock：手機休眠時輪詢暫停，rail 的累計能量不會漏，醒來後第一筆涵蓋整段休眠。
+  螢幕關閉時預設改為每 5 秒輪詢一次，以免輪詢本身墊高待機功耗（可在畫面上關閉）。
+
+沒有 LOG 在進行時，App 只在畫面可見時輪詢；前景時保持螢幕常亮。資料只在本機處理。
 
 ## 更新粒度與選用權限
 
 不需任何權限即可使用，但系統（PowerStatsService）此時最多每 20 秒才更新一次讀數。
 授予 `ACCESS_FINE_POWER_MONITORS` 後上限為 250 ms（Pixel 10 Pro／Android 17 實測約 500 ms 更新一次）。
-這個權限無法在 App 內請求，只能用 adb 授權一次：
+這個權限無法用一般的執行時授權對話框取得，但只需授權一次（重開機後仍保留），有兩種方式：
+
+- 不接電腦：在 Gymnotus 按 `Set up fast mode`，到「開發人員選項 → 無線偵錯」點「使用配對碼配對裝置」，
+  再把六位數配對碼輸入 Gymnotus 的通知。App 會以 ADB 用戶端的身分連回手機自己的無線偵錯並替自己授權
+  （需要連上 Wi-Fi；連線只走手機本機的 loopback）。
+- 接電腦，用 adb：
 
 ```powershell
 adb shell pm grant io.github.tengigabytes.gymnotus android.permission.ACCESS_FINE_POWER_MONITORS

@@ -10,6 +10,11 @@ activityCompose = "1.13.0"
 coreKtx = "1.19.1"
 kotlinxCoroutines = "1.9.0"
 junit = "4.13.2"
+# ADB client inside the app: pairs with the phone's own wireless debugging to run `pm grant` for itself.
+libadb = "3.1.1"
+sunSecurity = "1.1"
+# TLS 1.3 keying-material export needed for ADB pairing; the platform copy only offers it through hidden API.
+conscrypt = "2.7.0"
 
 [libraries]
 androidx-core-ktx = { module = "androidx.core:core-ktx", version.ref = "coreKtx" }
@@ -19,6 +24,9 @@ compose-ui = { module = "androidx.compose.ui:ui" }
 compose-material3 = { module = "androidx.compose.material3:material3" }
 kotlinx-coroutines-android = { module = "org.jetbrains.kotlinx:kotlinx-coroutines-android", version.ref = "kotlinxCoroutines" }
 junit = { module = "junit:junit", version.ref = "junit" }
+libadb = { module = "com.github.MuntashirAkon:libadb-android", version.ref = "libadb" }
+sun-security = { module = "com.github.MuntashirAkon:sun-security-android", version.ref = "sunSecurity" }
+conscrypt = { module = "org.conscrypt:conscrypt-android", version.ref = "conscrypt" }
 
 [plugins]
 android-application = { id = "com.android.application", version.ref = "agp" }
