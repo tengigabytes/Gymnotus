@@ -12,7 +12,13 @@
         android:name="android.permission.ACCESS_FINE_POWER_MONITORS"
         tools:ignore="ProtectedPermissions" />
 
+    <!-- Logging while the app is not on screen. -->
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+    <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
+    <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+
     <application
+        android:name=".GymnotusApp"
         android:allowBackup="false"
         android:icon="@mipmap/ic_launcher"
         android:label="@string/app_name"
@@ -26,6 +32,15 @@
                 <category android:name="android.intent.category.LAUNCHER" />
             </intent-filter>
         </activity>
+
+        <service
+            android:name=".sampler.LogService"
+            android:exported="false"
+            android:foregroundServiceType="specialUse">
+            <property
+                android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+                android:value="User-started recording of on-device power rail measurements to a file the user chose; it must continue while the user runs the workload being measured in other apps or with the screen off." />
+        </service>
     </application>
 
 </manifest>

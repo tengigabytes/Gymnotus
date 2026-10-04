@@ -25,6 +25,7 @@ import io.github.tengigabytes.gymnotus.power.PowerTree
 import io.github.tengigabytes.gymnotus.power.PowerTreeBuilder
 import io.github.tengigabytes.gymnotus.power.TreeGrouping
 import io.github.tengigabytes.gymnotus.power.TreeInput
+import io.github.tengigabytes.gymnotus.sampler.RailRow
 import java.util.Locale
 
 fun buildTree(rails: List<RailRow>, grouping: TreeGrouping, battery: BatterySample?): PowerTree = PowerTreeBuilder.build(
