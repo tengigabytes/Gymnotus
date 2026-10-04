@@ -3,7 +3,9 @@
 
 package io.github.tengigabytes.gymnotus.ui
 
+import java.io.File
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertTrue
 import org.junit.Test
 
 class TextReflowTest {
@@ -66,5 +68,23 @@ class TextReflowTest {
             ),
             parseInline("**Bold**: see `Build`, [the licence](LICENSE) and <https://example.org/x>."),
         )
+    }
+
+    @Test
+    fun selectsOneLanguage() {
+        val text = "# Title\n\ndate\n\n## English\n\nhello\n\n### More\n\n## 正體中文\n\n你好"
+        assertEquals("# Title\n\ndate\n\n\nhello\n\n### More\n", selectLanguage(text, "English"))
+        assertEquals("# Title\n\ndate\n\n\n你好", selectLanguage(text, "正體中文"))
+        assertEquals(text, selectLanguage(text, "Deutsch"))
+    }
+
+    // The headings in PRIVACY.md and the document_language strings must stay the same words.
+    @Test
+    fun privacyPolicyHasBothLanguages() {
+        val text = File("../PRIVACY.md").readText()
+        for (heading in listOf("English", "正體中文")) {
+            val section = selectLanguage(text, heading)
+            assertTrue(heading, section.length < text.length && section.lineSequence().none { it.startsWith("## ") })
+        }
     }
 }

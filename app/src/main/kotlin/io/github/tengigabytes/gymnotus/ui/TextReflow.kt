@@ -106,3 +106,17 @@ fun parseInline(text: String): List<InlineSpan> {
     if (position < text.length) spans.add(InlineSpan(text.substring(position), InlineStyle.PLAIN))
     return spans
 }
+/**
+ * Of a document that says the same thing in several languages, each under a level-two heading naming the
+ * language, keeps the part before the first such heading and the one section titled [heading], without that
+ * title. A document with no such section is returned as it is.
+ */
+fun selectLanguage(text: String, heading: String): String {
+    val lines = text.lines()
+    fun isSection(line: String) = line.startsWith("## ")
+    val start = lines.indexOfFirst { it.trim() == "## $heading" }
+    if (start < 0) return text
+    val preamble = lines.take(lines.indexOfFirst(::isSection))
+    val section = lines.drop(start + 1).takeWhile { !isSection(it) }
+    return (preamble + section).joinToString("\n")
+}

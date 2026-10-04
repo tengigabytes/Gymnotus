@@ -19,6 +19,8 @@
     <string name="setting_flow_nodes_hint">功率最大的幾個各自一格，其餘併入「其他」。</string>
     <string name="section_about">關於</string>
     <string name="about_version">版本 %1$s</string>
+    <!-- The heading of this language's section in PRIVACY.md; must match it exactly. -->
+    <string name="document_language">正體中文</string>
     <string name="about_license">Gymnotus 是自由軟體，以 GNU General Public License 第 3 版或更新版本授權，不附帶任何擔保。</string>
     <string name="about_license_button">授權全文</string>
     <string name="about_third_party">第三方元件</string>

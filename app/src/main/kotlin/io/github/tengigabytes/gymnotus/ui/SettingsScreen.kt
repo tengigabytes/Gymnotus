@@ -175,7 +175,11 @@ private fun ModeNotice(finePermission: Boolean, onSetUp: () -> Unit) {
  */
 @Composable
 fun LegalText(text: String, markdown: Boolean) {
-    val blocks = remember(text, markdown) { parseDocument(text, markdown) }
+    // A text in several languages shows the reader's own; the heading to look for is itself a translated string.
+    val language = stringResource(R.string.document_language)
+    val blocks = remember(text, markdown, language) {
+        parseDocument(if (markdown) selectLanguage(text, language) else text, markdown)
+    }
     SelectionContainer {
         LazyColumn(Modifier.fillMaxSize(), contentPadding = PaddingValues(16.dp), verticalArrangement = Arrangement.spacedBy(8.dp)) {
             items(blocks) { block ->

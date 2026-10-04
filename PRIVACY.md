@@ -41,7 +41,7 @@ delete.
 
 Questions or concerns: <https://github.com/tengigabytes/Gymnotus/issues>.
 
-## 繁體中文
+## 正體中文
 
 Gymnotus 只在你的裝置上處理資料。它沒有帳號、沒有廣告、沒有分析或當機回報元件，也不會把任何資料傳送到開發者或第三方的伺服器。
 

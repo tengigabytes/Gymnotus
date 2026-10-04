@@ -2,7 +2,7 @@
 
 # Gymnotus
 
-[English](README.md) | 繁體中文
+[English](README.md) | 正體中文
 
 在手機上直接顯示各電源軌（power rail）功耗的 Android App：免 root、免接電腦。它透過 Android 15 的
 PowerMonitor API 讀取裝置內建的電源監測器（ODPM）。
@@ -18,7 +18,7 @@ PowerMonitor API 讀取裝置內建的電源監測器（ODPM）。
 - **詳細**：用來判斷量測本身是否可信的資訊：輪詢統計、系統總和與其組成 rail 的交叉檢查、原始讀數。
 - **設定**（齒輪圖示）：更新模式、輪詢間隔、顯示選項、授權與隱私權文件。
 
-介面有英文與繁體中文。
+介面有英文與正體中文。
 
 ## 需求
 

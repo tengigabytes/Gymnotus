@@ -2,7 +2,7 @@
 
 # Gymnotus
 
-English | [繁體中文](README.zh-TW.md)
+English | [正體中文](README.zh-TW.md)
 
 An Android app that shows how much power each power rail of the phone is drawing, on the phone itself: no root,
 no computer. It reads the on-device power monitors (ODPM) through the PowerMonitor API of Android 15.
