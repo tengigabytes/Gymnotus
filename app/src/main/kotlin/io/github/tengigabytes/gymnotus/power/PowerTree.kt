@@ -41,9 +41,9 @@ data class TreeGroup(val name: String, val powerMw: Double?, val missing: Int, v
  * @property hasBatteryRail whether the device reports [PowerTreeBuilder.BATTERY_RAIL] at all
  * @property batteryRailIndex monitor index of that rail, null when the device has none
  * @property batteryRailMw power of that rail; it is the root only when [batteryIsRoot]
+ * @property batteryIsRoot on battery power, and the battery rail reads at least as much as the rails it feeds
  * @property railsSumMw sum of every other rail that has data
- * @property unmeasuredMw battery rail minus the other rails, only when [batteryIsRoot]; negative values are
- * shown as they are (the 20 s window may straddle a plug event)
+ * @property unmeasuredMw battery rail minus the other rails, only when [batteryIsRoot]; never negative
  * @property missing rails (other than the battery rail) without data
  */
 data class PowerTree(
@@ -102,7 +102,10 @@ object PowerTreeBuilder {
             }
             .sortedWith(byPower { it.powerMw })
         val railsSumMw = sumOrNull(loads.map { it.powerMw })
-        val batteryIsRoot = onExternalPower == false && batteryMw != null
+        // A battery rail that reads less than the rails it feeds cannot be their total: that happens for a refresh
+        // or two around a plug event, and whenever the reported power source is wrong. The rails' own sum is then
+        // the base, exactly as on external power, instead of shares above 100 % and a negative remainder.
+        val batteryIsRoot = onExternalPower == false && batteryMw != null && (railsSumMw == null || batteryMw >= railsSumMw)
         return PowerTree(
             hasBatteryRail = batteryRails.isNotEmpty(),
             batteryRailIndex = batteryRails.firstOrNull()?.index,

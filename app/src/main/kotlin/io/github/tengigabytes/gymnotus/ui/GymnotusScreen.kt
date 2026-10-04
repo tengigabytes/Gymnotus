@@ -56,6 +56,7 @@ fun GymnotusScreen(viewModel: ProbeViewModel) {
     var page by rememberSaveable { mutableStateOf(Page.LIVE) }
     var grouping by remember { mutableStateOf(viewModel.grouping) }
     var visual by remember { mutableStateOf(viewModel.visual) }
+    var sortByPower by remember { mutableStateOf(viewModel.sortByPower) }
     val context = LocalContext.current
 
     val selection = remember { ChartSelection() }
@@ -68,7 +69,7 @@ fun GymnotusScreen(viewModel: ProbeViewModel) {
             if (saved != null) {
                 selection.restore(saved)
             } else {
-                selectDefaults(selection, buildTree(state.rails, TreeGrouping.SUBSYSTEM, state.battery, deviceMap), batteryLabel)
+                selectDefaults(selection, buildTree(state.rails, TreeGrouping.SUBSYSTEM, state.battery, deviceMap, sortByPower = true), batteryLabel)
             }
             defaultsApplied = true
         }
@@ -125,6 +126,11 @@ fun GymnotusScreen(viewModel: ProbeViewModel) {
                     onVisual = {
                         visual = it
                         viewModel.visual = it
+                    },
+                    sortByPower = sortByPower,
+                    onSortByPower = {
+                        sortByPower = it
+                        viewModel.sortByPower = it
                     },
                     onShowSetup = { page = Page.DETAILS },
                     onRetry = viewModel::retry,

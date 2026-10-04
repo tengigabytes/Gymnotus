@@ -48,6 +48,17 @@ class SankeyTest {
     }
 
     @Test
+    fun batteryRailBelowTheRailsItFeedsIsNotUsedAsRoot() {
+        val low = rails.map { if (it.index == 7) it.copy(powerMw = 50.0) else it }
+        val model = SankeyBuilder.build(low, onExternalPower = false, map = map)!!
+        assertFalse(model.rootIsBattery)
+        assertEquals(260.0, model.rootMw, 1e-9)
+        assertNull(model.unmeasuredMw)
+        // What leaves the root still equals the root.
+        assertEquals(model.rootMw, model.sources.sumOf { it.valueMw }, 1e-9)
+    }
+
+    @Test
     fun nodeOrderFollowsTheMapNotTheReadings() {
         val model = SankeyBuilder.build(rails, onExternalPower = false, map = map)!!
         assertEquals(listOf("Main PMIC", "Sub PMIC", "System rail"), model.sources.map { it.name })

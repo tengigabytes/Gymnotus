@@ -12,6 +12,7 @@
     <string name="hero_detail_battery">Measured rails %1$s · unmeasured %2$s</string>
     <string name="hero_detail_external">On external power: no device total · battery rail %1$s</string>
     <string name="hero_detail_unknown">Power source unknown: no device total · battery rail %1$s</string>
+    <string name="hero_detail_below">Battery rail (%1$s) reads less than the rails it feeds: no device total</string>
     <string name="badge_fast">Fast · 0.5 s</string>
     <string name="badge_standard">Standard · 20 s</string>
     <string name="bar_unmeasured">Unmeasured</string>
@@ -103,6 +104,7 @@
     <string name="slow_screen_off">Poll every %1$d s while the screen is off</string>
     <string name="view_subsystem">By subsystem</string>
     <string name="view_source">By source</string>
+    <string name="sort_by_power">Sort by power</string>
 
     <!-- Shared values -->
     <string name="no_data">no data</string>

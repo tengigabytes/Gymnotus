@@ -144,6 +144,10 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
         get() = TreeGrouping.entries.firstOrNull { it.name == uiPrefs.getString(PREF_GROUPING, null) } ?: TreeGrouping.SUBSYSTEM
         set(value) = uiPrefs.edit { putString(PREF_GROUPING, value.name) }
 
+    var sortByPower: Boolean
+        get() = uiPrefs.getBoolean(PREF_SORT_BY_POWER, false)
+        set(value) = uiPrefs.edit { putBoolean(PREF_SORT_BY_POWER, value) }
+
     var visual: Visual
         get() = Visual.entries.firstOrNull { it.name == uiPrefs.getString(PREF_VISUAL, null) } ?: Visual.FLOW
         set(value) = uiPrefs.edit { putString(PREF_VISUAL, value.name) }
@@ -208,6 +212,7 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
         const val DEVICE_MAPS_DIR = "device-maps"
         const val PREF_GROUPING = "grouping"
         const val PREF_VISUAL = "visual"
+        const val PREF_SORT_BY_POWER = "sort_by_power"
         const val PREF_SELECTION = "chart_selection"
     }
 }

@@ -10,6 +10,7 @@
     <string name="hero_detail_battery">實測 rail %1$s · 未量測 %2$s</string>
     <string name="hero_detail_external">外接電源中：沒有整機總功率 · 電池 rail %1$s</string>
     <string name="hero_detail_unknown">電源狀態不明：沒有整機總功率 · 電池 rail %1$s</string>
+    <string name="hero_detail_below">電池 rail（%1$s）低於它供電的 rail 合計：沒有整機總功率</string>
     <string name="badge_fast">快速 · 0.5 秒</string>
     <string name="badge_standard">標準 · 20 秒</string>
     <string name="bar_unmeasured">未量測</string>
@@ -101,6 +102,7 @@
     <string name="slow_screen_off">螢幕關閉時每 %1$d 秒輪詢一次</string>
     <string name="view_subsystem">依子系統</string>
     <string name="view_source">依電源來源</string>
+    <string name="sort_by_power">依功率排序</string>
 
     <!-- Shared values -->
     <string name="no_data">無資料</string>

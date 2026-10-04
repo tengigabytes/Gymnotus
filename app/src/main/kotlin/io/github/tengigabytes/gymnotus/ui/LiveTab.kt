@@ -84,6 +84,8 @@ fun LiveTab(
     onGrouping: (TreeGrouping) -> Unit,
     visual: Visual,
     onVisual: (Visual) -> Unit,
+    sortByPower: Boolean,
+    onSortByPower: (Boolean) -> Unit,
     onShowSetup: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -93,7 +95,7 @@ fun LiveTab(
     }
     // The node whose make-up is shown: which column it is in, and its name.
     var inspected by remember { mutableStateOf<Pair<TreeGrouping, String>?>(null) }
-    val tree = buildTree(state.rails, grouping, state.battery, deviceMap)
+    val tree = buildTree(state.rails, grouping, state.battery, deviceMap, sortByPower)
     // Which subsystems get their own node is decided on their recent average, not the latest reading,
     // so they do not hop in and out of "other" from one refresh to the next.
     val average = remember(history) { averagePower(history) }
@@ -136,7 +138,7 @@ fun LiveTab(
                 }
             }
             if (!state.finePermission) item(key = "setup-card") { SetupCard(onShowSetup) }
-            item(key = "grouping") { GroupingChips(grouping, onGrouping) }
+            item(key = "grouping") { GroupingChips(grouping, onGrouping, sortByPower, onSortByPower) }
             treeRows(tree, state.rails, grouping, selection)
         }
     }
@@ -202,6 +204,7 @@ private fun Headline(tree: PowerTree, state: SamplerState, selection: ChartSelec
                 tree.batteryIsRoot -> stringResource(R.string.hero_detail_battery, formatPower(tree.railsSumMw), formatPower(tree.unmeasuredMw))
                 !tree.hasBatteryRail -> null
                 state.battery?.onExternalPower == true -> stringResource(R.string.hero_detail_external, formatPower(tree.batteryRailMw))
+                state.battery?.onExternalPower == false -> stringResource(R.string.hero_detail_below, formatPower(tree.batteryRailMw))
                 else -> stringResource(R.string.hero_detail_unknown, formatPower(tree.batteryRailMw))
             }
             if (detail != null) Text(detail, style = small, color = muted)
@@ -236,7 +239,7 @@ private fun Headline(tree: PowerTree, state: SamplerState, selection: ChartSelec
 }
 
 @Composable
-private fun GroupingChips(selected: TreeGrouping, onSelect: (TreeGrouping) -> Unit) {
+private fun GroupingChips(selected: TreeGrouping, onSelect: (TreeGrouping) -> Unit, sortByPower: Boolean, onSortByPower: (Boolean) -> Unit) {
     Column(Modifier.padding(horizontal = 16.dp)) {
         Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             FilterChip(
@@ -248,6 +251,11 @@ private fun GroupingChips(selected: TreeGrouping, onSelect: (TreeGrouping) -> Un
                 selected = selected == TreeGrouping.SOURCE,
                 onClick = { onSelect(TreeGrouping.SOURCE) },
                 label = { Text(stringResource(R.string.view_source)) },
+            )
+            FilterChip(
+                selected = sortByPower,
+                onClick = { onSortByPower(!sortByPower) },
+                label = { Text(stringResource(R.string.sort_by_power)) },
             )
         }
         Text(stringResource(R.string.live_hint), style = MaterialTheme.typography.bodySmall, color = MaterialTheme.colorScheme.onSurfaceVariant)

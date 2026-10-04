@@ -107,9 +107,11 @@ class PowerTreeTest {
             sources = listOf(RailSource("main", "Main PMIC", Regex("^[SL][0-9]+M(_.*)?$"))),
             unmonitored = emptyList(),
         )
-        val tree = PowerTreeBuilder.build(rails + battery, TreeGrouping.SOURCE, onExternalPower = false, map = map)
+        // Large enough to cover the other rails, which a root has to.
+        val inputs = (rails + battery).map { if (it.index == 3) it.copy(powerMw = 500.0) else it }
+        val tree = PowerTreeBuilder.build(inputs, TreeGrouping.SOURCE, onExternalPower = false, map = map)
         // The map's battery rail is the root; the default one is then an ordinary rail.
-        assertEquals(85.0, tree.baseMw!!, 1e-9)
+        assertEquals(500.0, tree.baseMw!!, 1e-9)
         assertEquals(3, tree.batteryRailIndex)
         val main = tree.groups.single { it.name == "Main PMIC" }
         assertEquals(listOf("S4M_VDD_CPU", "S2M_VDD_CPU2", "L1M_ALIVE"), main.leaves.map { it.rail })
@@ -119,8 +121,12 @@ class PowerTreeTest {
     }
 
     @Test
-    fun unmeasuredMayBeNegativeAndIsNotClamped() {
+    fun batteryRailBelowTheRailsItFeedsIsNotARoot() {
         val tree = PowerTreeBuilder.build(rails + battery.copy(powerMw = 100.0), TreeGrouping.SUBSYSTEM, false)
-        assertEquals(-94.0, tree.unmeasuredMw!!, 1e-9)
+        assertFalse(tree.batteryIsRoot)
+        assertEquals(194.0, tree.baseMw!!, 1e-9)
+        assertNull(tree.unmeasuredMw)
+        // The reading itself is kept, so the screen can say what the battery rail showed.
+        assertEquals(100.0, tree.batteryRailMw!!, 1e-9)
     }
 }

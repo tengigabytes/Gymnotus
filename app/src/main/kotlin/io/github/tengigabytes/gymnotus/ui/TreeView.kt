@@ -38,15 +38,16 @@ import io.github.tengigabytes.gymnotus.power.TreeInput
 import io.github.tengigabytes.gymnotus.sampler.RailRow
 import java.util.Locale
 
-// Groups and rails are put in the order the system lists the monitors, not by power: readings change twice a
-// second, and a list that re-sorts itself that often cannot be read.
-fun buildTree(rails: List<RailRow>, grouping: TreeGrouping, battery: BatterySample?, map: DeviceMap?): PowerTree {
+// By default groups and rails are put in the order the system lists the monitors, not by power: readings change
+// twice a second, and a list that re-sorts itself that often cannot be read. Sorting by power is the user's call.
+fun buildTree(rails: List<RailRow>, grouping: TreeGrouping, battery: BatterySample?, map: DeviceMap?, sortByPower: Boolean = false): PowerTree {
     val tree = PowerTreeBuilder.build(
         rails.filter { it.info.type == MonitorType.MEASUREMENT }.map { TreeInput(it.info.index, it.info.name, it.reading?.powerMw) },
         grouping,
         battery?.onExternalPower,
         map,
     )
+    if (sortByPower) return tree
     return tree.copy(
         groups = tree.groups
             .map { group -> group.copy(leaves = group.leaves.sortedBy { it.index }) }
