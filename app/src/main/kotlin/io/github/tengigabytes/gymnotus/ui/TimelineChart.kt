@@ -107,6 +107,12 @@ class ChartSelection {
 
     fun slotOf(key: String): Int? = series.firstOrNull { it.key == key }?.slot
 
+    // Puts back a saved selection, slots included, so every series returns in the colour it had.
+    fun restore(saved: List<SeriesSpec>) {
+        series.clear()
+        series.addAll(saved.filter { it.slot in 0 until MAX_SERIES }.distinctBy { it.slot }.sortedBy { it.slot })
+    }
+
     /** Adds or removes a series; adding does nothing once every colour slot is taken. */
     fun toggle(key: String, label: String, indices: List<Int>) {
         if (series.removeAll { it.key == key }) return

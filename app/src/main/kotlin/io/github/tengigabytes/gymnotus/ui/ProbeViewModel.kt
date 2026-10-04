@@ -1,6 +1,8 @@
 package io.github.tengigabytes.gymnotus.ui
 
 import android.app.Application
+import android.content.Context
+import androidx.core.content.edit
 import android.content.Intent
 import android.net.Uri
 import android.os.Build
@@ -14,12 +16,17 @@ import io.github.tengigabytes.gymnotus.adb.FastModeService
 import io.github.tengigabytes.gymnotus.adb.SelfAdb
 import io.github.tengigabytes.gymnotus.power.CsvExport
 import io.github.tengigabytes.gymnotus.power.DeviceMap
+import io.github.tengigabytes.gymnotus.power.TreeGrouping
 import io.github.tengigabytes.gymnotus.sampler.ExportSnapshot
 import io.github.tengigabytes.gymnotus.sampler.HistoryPoint
 import io.github.tengigabytes.gymnotus.sampler.LogService
+import io.github.tengigabytes.gymnotus.sampler.RailRow
 import io.github.tengigabytes.gymnotus.sampler.Sampler
 import io.github.tengigabytes.gymnotus.sampler.SamplerState
 import kotlin.coroutines.cancellation.CancellationException
+import org.json.JSONArray
+import org.json.JSONException
+import org.json.JSONObject
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
@@ -130,6 +137,51 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
         stop()
     }
 
+    private val uiPrefs = app.getSharedPreferences("ui", Context.MODE_PRIVATE)
+
+    // What the Live page was last showing; unknown or missing values fall back to the defaults.
+    var grouping: TreeGrouping
+        get() = TreeGrouping.entries.firstOrNull { it.name == uiPrefs.getString(PREF_GROUPING, null) } ?: TreeGrouping.SUBSYSTEM
+        set(value) = uiPrefs.edit { putString(PREF_GROUPING, value.name) }
+
+    var visual: Visual
+        get() = Visual.entries.firstOrNull { it.name == uiPrefs.getString(PREF_VISUAL, null) } ?: Visual.FLOW
+        set(value) = uiPrefs.edit { putString(PREF_VISUAL, value.name) }
+
+    // Monitors are saved by name rather than index: the names identify a rail, the order is only today's listing.
+    fun saveSelection(series: List<SeriesSpec>, rails: List<RailRow>) {
+        val names = rails.associate { it.info.index to it.info.name }
+        val array = JSONArray()
+        for (spec in series) {
+            array.put(
+                JSONObject()
+                    .put("key", spec.key)
+                    .put("label", spec.label)
+                    .put("slot", spec.slot)
+                    .put("monitors", JSONArray(spec.indices.mapNotNull { names[it] })),
+            )
+        }
+        uiPrefs.edit { putString(PREF_SELECTION, array.toString()) }
+    }
+
+    // Null when nothing was ever saved, so the caller can tell "no choice yet" from "chose nothing".
+    // A series whose monitors no longer exist is dropped.
+    fun savedSelection(rails: List<RailRow>): List<SeriesSpec>? {
+        val json = uiPrefs.getString(PREF_SELECTION, null) ?: return null
+        val indexOf = rails.associate { it.info.name to it.info.index }
+        return try {
+            val array = JSONArray(json)
+            (0 until array.length()).mapNotNull { i ->
+                val item = array.getJSONObject(i)
+                val monitors = item.getJSONArray("monitors")
+                val indices = (0 until monitors.length()).mapNotNull { indexOf[monitors.getString(it)] }
+                if (indices.size != monitors.length() || indices.isEmpty()) null else SeriesSpec(item.getString("key"), item.getString("label"), indices, item.getInt("slot"))
+            }
+        } catch (e: JSONException) {
+            null
+        }
+    }
+
     private fun text(@StringRes id: Int, vararg args: Any): String = getApplication<Application>().getString(id, *args)
 
     private fun loadDeviceMap(): DeviceMap? {
@@ -154,5 +206,8 @@ class ProbeViewModel(app: Application) : AndroidViewModel(app) {
 
     private companion object {
         const val DEVICE_MAPS_DIR = "device-maps"
+        const val PREF_GROUPING = "grouping"
+        const val PREF_VISUAL = "visual"
+        const val PREF_SELECTION = "chart_selection"
     }
 }

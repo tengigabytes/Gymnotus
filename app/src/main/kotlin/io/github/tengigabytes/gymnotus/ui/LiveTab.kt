@@ -21,7 +21,6 @@ import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
-import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -44,7 +43,7 @@ import io.github.tengigabytes.gymnotus.sampler.SamplerState
 import java.util.Locale
 
 /** The picture above the list: where the power goes now, or how it changed over the last minutes. */
-private enum class Visual(@StringRes val label: Int) {
+enum class Visual(@StringRes val label: Int) {
     FLOW(R.string.view_flow),
     TREND(R.string.view_trend),
 }
@@ -83,6 +82,8 @@ fun LiveTab(
     deviceMap: DeviceMap?,
     grouping: TreeGrouping,
     onGrouping: (TreeGrouping) -> Unit,
+    visual: Visual,
+    onVisual: (Visual) -> Unit,
     onShowSetup: () -> Unit,
     onRetry: () -> Unit,
 ) {
@@ -90,7 +91,6 @@ fun LiveTab(
         ListStatus(state, onRetry)
         return
     }
-    var visual by rememberSaveable { mutableStateOf(Visual.FLOW) }
     // The node whose make-up is shown: which column it is in, and its name.
     var inspected by remember { mutableStateOf<Pair<TreeGrouping, String>?>(null) }
     val tree = buildTree(state.rails, grouping, state.battery, deviceMap)
@@ -116,7 +116,7 @@ fun LiveTab(
         Headline(tree, state, selection)
         Row(Modifier.padding(horizontal = 16.dp), horizontalArrangement = Arrangement.spacedBy(8.dp)) {
             for (entry in Visual.entries) {
-                FilterChip(selected = visual == entry, onClick = { visual = entry }, label = { Text(stringResource(entry.label)) })
+                FilterChip(selected = visual == entry, onClick = { onVisual(entry) }, label = { Text(stringResource(entry.label)) })
             }
         }
         when (visual) {

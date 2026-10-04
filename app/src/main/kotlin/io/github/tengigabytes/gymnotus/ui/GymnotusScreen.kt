@@ -28,6 +28,7 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.saveable.rememberSaveable
 import androidx.compose.runtime.setValue
+import androidx.compose.runtime.snapshotFlow
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.res.stringResource
@@ -53,7 +54,8 @@ fun GymnotusScreen(viewModel: ProbeViewModel) {
     val history by viewModel.history.collectAsState()
     val deviceMap by viewModel.deviceMap.collectAsState()
     var page by rememberSaveable { mutableStateOf(Page.LIVE) }
-    var grouping by rememberSaveable { mutableStateOf(TreeGrouping.SUBSYSTEM) }
+    var grouping by remember { mutableStateOf(viewModel.grouping) }
+    var visual by remember { mutableStateOf(viewModel.visual) }
     val context = LocalContext.current
 
     val selection = remember { ChartSelection() }
@@ -61,8 +63,20 @@ fun GymnotusScreen(viewModel: ProbeViewModel) {
     var defaultsApplied by remember { mutableStateOf(false) }
     if (!defaultsApplied && state.rails.any { it.reading?.powerMw != null }) {
         LaunchedEffect(Unit) {
-            selectDefaults(selection, buildTree(state.rails, TreeGrouping.SUBSYSTEM, state.battery, deviceMap), batteryLabel)
+            // The last selection if there was one, even an empty one; the defaults only on first use.
+            val saved = viewModel.savedSelection(state.rails)
+            if (saved != null) {
+                selection.restore(saved)
+            } else {
+                selectDefaults(selection, buildTree(state.rails, TreeGrouping.SUBSYSTEM, state.battery, deviceMap), batteryLabel)
+            }
             defaultsApplied = true
+        }
+    }
+    // Saving starts only once the selection has been restored, or the empty starting state would overwrite it.
+    if (defaultsApplied) {
+        LaunchedEffect(Unit) {
+            snapshotFlow { selection.series.toList() }.collect { viewModel.saveSelection(it, state.rails) }
         }
     }
 
@@ -103,7 +117,15 @@ fun GymnotusScreen(viewModel: ProbeViewModel) {
                     selection = selection,
                     deviceMap = deviceMap,
                     grouping = grouping,
-                    onGrouping = { grouping = it },
+                    onGrouping = {
+                        grouping = it
+                        viewModel.grouping = it
+                    },
+                    visual = visual,
+                    onVisual = {
+                        visual = it
+                        viewModel.visual = it
+                    },
                     onShowSetup = { page = Page.DETAILS },
                     onRetry = viewModel::retry,
                 )

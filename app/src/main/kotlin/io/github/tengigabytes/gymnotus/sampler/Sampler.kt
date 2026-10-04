@@ -1,6 +1,7 @@
 package io.github.tengigabytes.gymnotus.sampler
 
 import android.content.Context
+import androidx.core.content.edit
 import android.net.Uri
 import android.os.Build
 import android.os.PowerMonitor
@@ -116,8 +117,11 @@ class Sampler(private val context: Context) {
     /** Power per rail at each refresh over the last [BUFFER_SPAN_MS]. */
     val historyFlow: StateFlow<List<HistoryPoint>> = _history.asStateFlow()
 
-    // Without the fine permission the system refreshes every 20 s, so fast polling would only return repeats.
-    private var intervalMs = if (source.hasFinePermission) FINE_INTERVAL_MS else COARSE_INTERVAL_MS
+    private val prefs = context.getSharedPreferences("sampler", Context.MODE_PRIVATE)
+
+    // The user's choice if there is one. Otherwise it follows the mode: without the fine permission the system
+    // refreshes every 20 s, so fast polling would only return repeats.
+    private var intervalMs = prefs.getInt(PREF_INTERVAL_MS, if (source.hasFinePermission) FINE_INTERVAL_MS else COARSE_INTERVAL_MS)
     private var seq = 0L
     private var pollErrors = 0L
     private var lastPollError: String? = null
@@ -125,7 +129,7 @@ class Sampler(private val context: Context) {
     // Bumped by reset(); a poll that was in flight across a reset is discarded.
     private var generation = 0
 
-    private var slowWhenScreenOff = true
+    private var slowWhenScreenOff = prefs.getBoolean(PREF_SLOW_WHEN_SCREEN_OFF, true)
     private var lastScreenState: Int? = null
 
     private val holders = mutableSetOf<Holder>()
@@ -134,7 +138,7 @@ class Sampler(private val context: Context) {
     private var log: LogSession? = null
 
     init {
-        _state.update { it.copy(intervalMs = intervalMs, finePermission = source.hasFinePermission) }
+        _state.update { it.copy(intervalMs = intervalMs, finePermission = source.hasFinePermission, slowWhenScreenOff = slowWhenScreenOff) }
     }
 
     fun acquire(holder: Holder) {
@@ -162,6 +166,7 @@ class Sampler(private val context: Context) {
     /** Applies from the next poll on; allowed during a log, where each row carries the interval in effect. */
     fun setSlowWhenScreenOff(enabled: Boolean) {
         slowWhenScreenOff = enabled
+        prefs.edit { putBoolean(PREF_SLOW_WHEN_SCREEN_OFF, enabled) }
         _state.update { it.copy(slowWhenScreenOff = enabled) }
     }
 
@@ -200,6 +205,7 @@ class Sampler(private val context: Context) {
     fun setInterval(ms: Int) {
         if (ms == intervalMs || log != null) return
         intervalMs = ms
+        prefs.edit { putInt(PREF_INTERVAL_MS, ms) }
         reset()
     }
 
@@ -370,6 +376,8 @@ class Sampler(private val context: Context) {
 
         // Long enough for the battery charge counter to move by many of its steps.
         const val BUFFER_SPAN_MS = 300_000L
+        private const val PREF_INTERVAL_MS = "interval_ms"
+        private const val PREF_SLOW_WHEN_SCREEN_OFF = "slow_when_screen_off"
         private const val LIST_TIMEOUT_MS = 10_000L
         private const val READ_TIMEOUT_MS = 5_000L
     }
