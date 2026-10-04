@@ -58,6 +58,11 @@ adb shell pm grant io.github.tengigabytes.gymnotus android.permission.ACCESS_FIN
 
 畫面上方會顯示目前是哪一種模式。系統會對回傳的能量值加入小幅隨機雜訊，兩種模式皆然。
 
+## 授權
+
+Gymnotus 以 GNU General Public License 第 3 版或（由你選擇）任何更新版本授權，全文見 [LICENSE](LICENSE)。
+使用到的第三方函式庫與資料來源列在 [THIRD_PARTY.md](THIRD_PARTY.md)；隱私權政策見 [PRIVACY.md](PRIVACY.md)。
+
 ## 命名由來
 
 *Gymnotus* 是新熱帶區的弱電魚屬，以感測自身電場的擾動來感知環境（electrolocation），
